@@ -1,7 +1,7 @@
-# NLP_Duplicate_Listing_Property
-
-- Query Data From Postgre
-- Extraction Information
+# NLP Duplicate Listing Property
+An NLP project: Detect duplication of property in condo listings
+- Query Data From Postgresql
+- Extract Information
 - Filter Data
 - Similarity Data
 - Scoring
