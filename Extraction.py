@@ -1,13 +1,19 @@
 import re
 
 def extraction_price(detail):
-    patterns = ['([0-9,]*) บาท', 'ราคา ([0-9,]*)']
+    patterns = ['([0-9,]+) บาท', 'ราคา ([0-9,]+)']
     price = set()
     for p in patterns:
         exp = re.compile(p)
-        price.update(exp.findall(detail))
-    print(price)
-    return price
+        s = [float(re.sub(',', '', i)) for i in exp.findall(detail)]
+        price.update(s)
+
+    price = [i for i in price if (i > 1000 and i < 1000000)]
+    if len(price) > 1:
+        return -1
+    if len(price) == 0:
+        return None
+    return [price.pop(), None]
 
 def extraction_size_before(size, ext_size):
     for i in range(len(size)-1):
