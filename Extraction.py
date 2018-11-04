@@ -67,6 +67,8 @@ def extraction_size(detail):
 def extraction_tower_after(tower, ext_tower):
     for i in range(len(tower)-1):
         point = 0
+        if tower[i+1] == '':
+            continue
         while tower[i+1][point] not in '1234567890 ':
             point += 1
             if point >= len(tower[i+1]):
@@ -83,7 +85,6 @@ def extraction_tower_after(tower, ext_tower):
 def extraction_tower(detail):
     ext_tower = extraction_tower_after(detail.split('ตึก'), None)
     ext_tower = extraction_tower_after(detail.split('อาคาร'), ext_tower)
-    print(ext_tower)
     return ext_tower
 
 def extraction(detail):
@@ -93,12 +94,12 @@ def extraction(detail):
     ext = {'price':[None, None], 'size':None, 'tower':None, 'floor':None, 'type':None, 'bedroom':None, 'bathroom':None}    
     if not detail : 
         return ext
+    
+    ext['price'] = extraction_price(detail)
+    ext['size'] = extraction_size(detail)
+    ext['tower'] = extraction_tower(detail)
 
-    # ner = thainer()
-    # g = word_tokenize(detail,engine='newmm')
-    # print(g)
-    # text = ner.get_ner(detail)
-    # print(text, '\n\n\n')
-    # for word in text:
-    #     print(word[0] , '\n')
+    if ext['price'] == -1 or ext['size'] == -1 or ext['tower'] == -1:
+        return -1
+
     return ext

@@ -9,11 +9,14 @@ if __name__ == "__main__":
     WEIGHT = {'price':0.2, 'size':0.2, 'tower':0.2, 'floor':0.2, 'type':0.2} # tune here
     rows = QF.query()
     filter_rows = []
+    multiple_row = []
+    not_match_row = []
     print("-- Extraction & Filter--", '\n')
     for row in rows:
-        # print('---------------------------------------------------------------------------\n',row['id'],'\n')
         ext = Extr.extraction(row['detail'])
-
+        if ext == -1:
+            multiple_row.append(row)
+            continue            
     #     if ext['price'] != None and ext['price'] != row['price']:
     #         # field not match
     #         continue
@@ -32,6 +35,7 @@ if __name__ == "__main__":
         row['ext'] = ext
         filter_rows.append(row)
 
+    print("Multiple Context" , len(multiple_row) , '\n')
     rows_pair = QF.filter(filter_rows)
 
     print("-- Scoring --", '\n')
