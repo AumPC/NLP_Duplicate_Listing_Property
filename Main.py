@@ -5,12 +5,15 @@ import QueryFilter as QF
 from math import log
 
 if __name__ == "__main__":
+    print("-- Query --", '\n')
     WEIGHT = {'price':0.2, 'size':0.2, 'tower':0.2, 'floor':0.2, 'type':0.2} # tune here
     rows = QF.query()
     filter_rows = []
+    print("-- Extraction & Filter--", '\n')
     for row in rows:
         # print('---------------------------------------------------------------------------\n',row['id'],'\n')
         ext = Extr.extraction(row['detail'])
+
     #     if ext['price'] != None and ext['price'] != row['price']:
     #         # field not match
     #         continue
@@ -30,7 +33,8 @@ if __name__ == "__main__":
         filter_rows.append(row)
 
     rows_pair = QF.filter(filter_rows)
-    # print(rows_pair)
+
+    print("-- Scoring --", '\n')
     score = []
     for pairs in rows_pair:
         if len(pairs) < 2:

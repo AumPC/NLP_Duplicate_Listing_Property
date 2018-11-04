@@ -9,7 +9,7 @@ def query():
     # tip: use RealDictCursor to query object as dictionary
     conn = psycopg2.connect("dbname=Temp user=postgres password=")
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute("SELECT * FROM condo_listings_sample order by condo_project_id, user_id DESC limit 10")
+    cur.execute("SELECT * FROM condo_listings_sample order by condo_project_id, user_id DESC limit 100")
     rows = cur.fetchall()
     print("The number of data: ", cur.rowcount)
     listing = []
@@ -18,7 +18,7 @@ def query():
         condo['id'] = row['id']
         condo['user_id'] = row['user_id']
         condo['title'] = row['title']
-        if 'max_rental_price' in row['price']['rental']:
+        if 'max_rental_price' in row['price']['rental'] and row['price']['rental']['max_rental_price']:
             condo['price'] = [float(row['price']['rental']['min_rental_price']), float(row['price']['rental']['max_rental_price'])]
         elif row['price']['rental']['min_rental_price']:
             condo['price'] = [float(row['price']['rental']['min_rental_price']), None]
@@ -38,7 +38,6 @@ def query():
     return listing
 
 def clear_tag(detail):
-    # print (detail, '\n')
     detail = re.sub('<.*?>|&nbsp;|&gt;|==|\*\*|---|\\\\|\/\/', ' ', detail)
     # print (detail, '\n')
     return detail

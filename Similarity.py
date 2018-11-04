@@ -7,6 +7,8 @@ def different_numerical(a, b):
         return 1
     if a == None or b == None:
         return 0
+    if a == 0 and b == 0:
+        return 1
     return 1 - (abs(a - b) * 2 / (a + b))
 
 def different_character(a, b):
