@@ -12,7 +12,7 @@ def extraction_price(detail):
     if len(price) > 1:
         return -1
     if len(price) == 0:
-        return None
+        return [None, None]
     return [price.pop(), None]
 
 def extraction_size_before(size, ext_size):

@@ -16,16 +16,16 @@ if __name__ == "__main__":
         ext = Extr.extraction(row['detail'])
         if ext == -1:
             multiple_row.append(row)
-            continue            
-    #     if ext['price'] != None and ext['price'] != row['price']:
-    #         # field not match
-    #         continue
-    #     if ext['size'] != None and ext['size'] != row['size']:
-    #         # field not match
-    #         continue
-    #     if ext['tower'] != None and ext['tower'] != row['tower']:
-    #         # field not match
-    #         continue
+            continue 
+        if ext['price'] != [None, None] and ext['price'] != row['price']:
+            not_match_row.append(row)
+            continue
+        if ext['size'] != None and ext['size'][0] != '.' and ext['size'][-1] != '.' and float(ext['size']) != row['size']:
+            not_match_row.append(row)
+            continue
+        if ext['tower'] != None and ext['tower'] != row['tower']:
+            not_match_row.append(row)
+            continue
     #     if ext['floor'] != None and ext['floor'] != row['floor']:
     #         # field not match
     #         continue
@@ -36,6 +36,7 @@ if __name__ == "__main__":
         filter_rows.append(row)
 
     print("Multiple Context" , len(multiple_row) , '\n')
+    print("Not Match Context" , len(not_match_row) , '\n')
     rows_pair = QF.filter(filter_rows)
 
     print("-- Scoring --", '\n')

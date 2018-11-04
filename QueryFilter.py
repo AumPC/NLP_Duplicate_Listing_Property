@@ -9,7 +9,7 @@ def query():
     # tip: use RealDictCursor to query object as dictionary
     conn = psycopg2.connect("dbname=Temp user=postgres password=")
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute("SELECT * FROM condo_listings_sample order by condo_project_id, user_id DESC limit 100")
+    cur.execute("SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100")
     rows = cur.fetchall()
     print("The number of data: ", cur.rowcount)
     listing = []
