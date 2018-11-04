@@ -26,6 +26,12 @@ if __name__ == "__main__":
         if ext['tower'] != None and ext['tower'] != row['tower']:
             not_match_row.append(row)
             continue
+        if ext['bedroom'] != None and ext['bedroom'] != row['bedroom']:
+            not_match_row.append(row)
+            continue
+        if ext['bathroom'] != None and ext['bathroom'] != row['bathroom']:
+            not_match_row.append(row)
+            continue
     #     if ext['floor'] != None and ext['floor'] != row['floor']:
     #         # field not match
     #         continue

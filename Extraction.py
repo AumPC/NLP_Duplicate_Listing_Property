@@ -87,6 +87,24 @@ def extraction_tower(detail):
     ext_tower = extraction_tower_after(detail.split('อาคาร'), ext_tower)
     return ext_tower
 
+def extraction_bed_bath(detail):
+    patterns = ['([0-9,]+) ห้องนอน ([0-9,]+) ห้องน้ำ', '([0-9,]+) นอน ([0-9,]+) น้ำ', 'ห้องนอน ([0-9,]+) ห้องน้ำ ([0-9,]+)', 'นอน ([0-9,]+) น้ำ ([0-9,]+)', 
+                '([0-9,]+)ห้องนอน ([0-9,]+)ห้องน้ำ', '([0-9,]+)นอน ([0-9,]+)น้ำ', 'ห้องนอน([0-9,]+)ห้องน้ำ([0-9,]+)', 'นอน([0-9,]+)น้ำ([0-9,]+)', 
+                '([0-9,]+) bedroom ([0-9,]+) bathroom', '([0-9,]+) bed ([0-9,]+) bath', 'bedroom ([0-9,]+) bathroom ([0-9,]+)', 'bed ([0-9,]+) bath ([0-9,]+)']
+    bedroom = set()
+    bathroom = set()
+    for p in patterns:
+        exp = re.compile(p)
+        for i in exp.findall(detail):
+            bedroom.update(i[0])
+            bathroom.update(i[1])
+
+    if len(bedroom) > 1 and len(bathroom) > 1:
+        return -1, -1
+    if len(bedroom) == 0 and len(bathroom) == 0:
+        return None, None
+    return bedroom.pop(), bathroom.pop()
+
 def extraction(detail):
     # which field can't extract, return None
     # filter multiple value
@@ -98,8 +116,8 @@ def extraction(detail):
     ext['price'] = extraction_price(detail)
     ext['size'] = extraction_size(detail)
     ext['tower'] = extraction_tower(detail)
-
-    if ext['price'] == -1 or ext['size'] == -1 or ext['tower'] == -1:
+    ext['bedroom'], ext['bathroom'] = extraction_bed_bath(detail)
+    if ext['price'] == -1 or ext['size'] == -1 or ext['tower'] == -1 or ext['bedroom'] == -1 or ext['bathroom'] == -1:
         return -1
 
     return ext
