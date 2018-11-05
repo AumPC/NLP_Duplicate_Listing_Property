@@ -7,7 +7,8 @@ def query():
     # connect to postgresql database using psycopg2
     # in python3, do not pip psycopg2. please pip psycopg2-binary instead
     # tip: use RealDictCursor to query object as dictionary
-    conn = psycopg2.connect("dbname=Temp user=postgres password=")
+    file_object  = open('./password_db.txt', 'r') 
+    conn = psycopg2.connect("dbname=Temp user=postgres password="+file_object.readline())
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute("SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100")
     rows = cur.fetchall()
