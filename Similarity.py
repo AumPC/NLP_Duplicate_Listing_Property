@@ -35,50 +35,40 @@ def field_similarity(pair, WEIGHT):
     price_score = WEIGHT['price'] * different_numerical(pair[0]['price'][0], pair[1]['price'][0])
     size_score = WEIGHT['size'] * different_numerical(pair[0]['size'], pair[1]['size'])
     tower_score = WEIGHT['tower'] * different_character(pair[0]['tower'], pair[1]['tower'])
-    # floor_score = WEIGHT['floor'] * different_numerical(pair[0]['floor'], pair[1]['floor'])
     floor_score = WEIGHT['floor'] * different_character(pair[0]['floor'], pair[1]['floor'])
     type_score = WEIGHT['type'] * different_character(pair[0]['type'], pair[1]['type'])
     return price_score + size_score + tower_score + floor_score + type_score
 
-def minNum(a,b) :
-    if(a > b) :
-        return b
-    return a
 
-def isNumber(num) :
+def is_number(num) :
     try :
         float(num)
         return True
     except ValueError :
         return False
 
-def bagOfWord(text) :
-    wordList=word_tokenize(text,engine='newmm')
+def bag_of_word(text) :
+    word_list = word_tokenize(text, engine='newmm')
     bag = {}
-    for i in wordList :
-        if (i == ' ' or i == '\n' or isNumber(i)) :
+    for word in word_list :
+        if word == ' ' or word == '\n' or is_number(word) :
             continue
-        elif (i in bag) :
-            bag[i] += 1
+        elif word in bag :
+            bag[word] += 1
         else :
-            bag[i] = 1
+            bag[word] = 1
     return bag
 
-def detail_similarity(textA,textB) :
-    bagA = bagOfWord(textA)
-    bagB = bagOfWord(textB)
-    sizeA = 0
-    sizeB = 0
-    insc = 0
-    for i in bagA :
-        sizeA += bagA[i]
-    for i in bagB :
-        sizeB += bagB[i]
-        if(i in bagA) :
-            insc += minNum(bagA[i],bagB[i])
-    return (1+insc)/(1+minNum(sizeA,sizeB))
-
-# def detail_similarity(detail1, detail2):
-#     # use bag of word here
-#     # score = (1 + total_intersect_word)/(1 + total_word_in_shorter_detail)
-#     return 0
+def detail_similarity(text_A,text_B) :
+    bag_A = bag_of_word(text_A)
+    bag_B = bag_of_word(text_B)
+    size_A = 0
+    size_B = 0
+    intersect = 0
+    for word in bag_A :
+        size_A += bag_A[word]
+    for word in bag_B :
+        size_B += bag_B[word]
+        if word in bag_A :
+            intersect += min(bag_A[word],bag_B[word])
+    return (1+intersect)/(1+min(size_A,size_B))

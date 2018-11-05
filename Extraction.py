@@ -8,7 +8,7 @@ def extraction_price(detail):
         s = [float(re.sub(',', '', i)) for i in exp.findall(detail)]
         price.update(s)
 
-    price = [i for i in price if (i > 1000 and i < 1000000)]
+    price = [i for i in price if 1000 < i < 1000000]
     if len(price) > 1:
         return -1
     if len(price) == 0:
@@ -16,6 +16,8 @@ def extraction_price(detail):
     return [price.pop(), None]
 
 def extraction_size_before(size, ext_size):
+    if ext_size == -1:
+        return -1
     for i in range(len(size)-1):
         point = len(size[i])-1
         while size[i][point] in '0123456789 /,.':
@@ -23,15 +25,17 @@ def extraction_size_before(size, ext_size):
             if point < 0:
                 break
         ext_size_arr = size[i][point+1:]
-        ext_size_arr = re.split(' |/|,', ext_size_arr)
+        ext_size_arr = re.split('[ /,]', ext_size_arr)
         for value in ext_size_arr:
-            if value and ext_size == None:
+            if value and ext_size is None:
                 ext_size = value
             if value and ext_size != value:
                 return -1
     return ext_size
 
 def extraction_size_after(size, ext_size):
+    if ext_size == -1:
+        return -1
     for i in range(len(size)-1):
         point = 0
         while size[i+1][point] in '0123456789 /,.':
@@ -39,9 +43,9 @@ def extraction_size_after(size, ext_size):
             if point >= len(size[i+1]):
                 break
         ext_size_arr = size[i+1][0:point]
-        ext_size_arr = re.split(' |/|,', ext_size_arr)
+        ext_size_arr = re.split('[ /,]', ext_size_arr)
         for value in ext_size_arr:
-            if value and ext_size == None:
+            if value and ext_size is None:
                 ext_size = value
             if value and ext_size != value:
                 return -1
@@ -65,6 +69,8 @@ def extraction_size(detail):
     return ext_size
 
 def extraction_tower_after(tower, ext_tower):
+    if ext_tower == -1:
+        return -1
     for i in range(len(tower)-1):
         point = 0
         if tower[i+1] == '':
@@ -74,9 +80,9 @@ def extraction_tower_after(tower, ext_tower):
             if point >= len(tower[i+1]):
                 break
         ext_tower_arr = tower[i+1][0:point]
-        ext_tower_arr = re.split(' |/|,', ext_tower_arr)
+        ext_tower_arr = re.split('[ /,]', ext_tower_arr)
         for value in ext_tower_arr:
-            if value and ext_tower == None and value in ['A','B','C','D']:
+            if value and ext_tower is None and value in ['A', 'B', 'C', 'D']:
                 ext_tower = value
             if value and ext_tower != value and value in ['A','B','C','D']:
                 return -1
