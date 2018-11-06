@@ -40,6 +40,11 @@ def query():
     # save_to_file(listing, "./src/condo_listings_sample.json")
     return listing
 
+def read_json_file(filename):
+    open_file = open(filename, 'r')
+    data = json.load(open_file)
+    return data
+
 def clear_tag(detail):
     detail = re.sub('<.*?>|&nbsp;|&gt;|==|\*\*|---|\\\\|\/\/', ' ', detail)
     # print (detail, '\n')

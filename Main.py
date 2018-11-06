@@ -8,6 +8,7 @@ if __name__ == "__main__":
     print("-- Query --", '\n')
     WEIGHT = {'price':0.2, 'size':0.2, 'tower':0.2, 'floor':0.2, 'type':0.2} # tune here
     rows = QF.query()
+    # rows = QF.read_json_file("./src/condo_listings_sample.json")
     filter_rows = []
     multiple_row = []
     not_match_row = []
