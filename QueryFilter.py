@@ -1,16 +1,16 @@
 import psycopg2
 import psycopg2.extras
-
+import json
 import re
 
-def query():
+def query(query_command):
     # connect to postgresql database using psycopg2
     # in python3, do not pip psycopg2. please pip psycopg2-binary instead
     # tip: use RealDictCursor to query object as dictionary
     file_object  = open('./password_db.txt', 'r') 
     conn = psycopg2.connect("dbname=Temp user=postgres password="+file_object.readline())
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute("SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100")
+    cur.execute(query_command)
     rows = cur.fetchall()
     print("The number of data: ", cur.rowcount)
     listing = []
@@ -37,6 +37,11 @@ def query():
         condo['detail'] = clear_tag(row['detail'])
         listing.append(condo)
     return listing
+
+def read_json_file(filename):
+    open_file = open(filename, 'r')
+    data = json.load(open_file)
+    return data
 
 def clear_tag(detail):
     detail = re.sub('<.*?>|&nbsp;|&gt;|==|\*\*|---|\\\\|\/\/', ' ', detail)

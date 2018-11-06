@@ -7,7 +7,9 @@ from math import log
 if __name__ == "__main__":
     print("-- Query --", '\n')
     WEIGHT = {'price':0.2, 'size':0.2, 'tower':0.2, 'floor':0.2, 'type':0.2} # tune here
-    rows = QF.query()
+    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100"
+    rows = QF.query(query_command)
+    # rows = QF.read_json_file("./src/condo_listings_sample.json")
     filter_rows = []
     multiple_row = []
     not_match_row = []
