@@ -1,6 +1,6 @@
 import psycopg2
 import psycopg2.extras
-
+import json
 import re
 
 def query():
@@ -36,6 +36,8 @@ def query():
         condo['bathroom'] = row['room_information']['no_of_bath']
         condo['detail'] = clear_tag(row['detail'])
         listing.append(condo)
+    # save_to_file(listing, "./src/condo_listings_dup.json")
+    # save_to_file(listing, "./src/condo_listings_sample.json")
     return listing
 
 def clear_tag(detail):
@@ -58,3 +60,7 @@ def filter(rows):
         group.append(row)
     summary.append(group)
     return summary
+
+def save_to_file(data, filename):
+    open_file = open(filename, 'w')
+    json.dump(data, open_file, sort_keys=True, indent=4)
