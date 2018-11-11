@@ -1,15 +1,15 @@
 import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
+import FindGroup as FG
 
 from math import log
 
 if __name__ == "__main__":
     print("-- Query --", '\n')
     WEIGHT = {'price':0.2, 'size':0.2, 'tower':0.2, 'floor':0.2, 'type':0.2} # tune here
-    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100"
-    rows = QF.query(query_command)
-    # rows = QF.read_json_file("./src/condo_listings_sample.json")
+    # rows = QF.query()
+    rows = QF.read_json_file("./src/condo_listings_sample.json")
     filter_rows = []
     multiple_row = []
     not_match_row = []
@@ -62,5 +62,9 @@ if __name__ == "__main__":
                 if confidence > 0:
                     # tune threshold here
                     score.append([pairs[first]['id'], pairs[sec]['id'], confidence])
-    for s in score:
-        print(s)
+        # print("-",end='')
+    group = FG.group_find(score)
+    for g in group:
+        print(group[g])
+    # for s in score:
+    #     print(s)
