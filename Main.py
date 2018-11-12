@@ -65,6 +65,7 @@ if __name__ == "__main__":
         # print("-",end='')
     group = FG.group_find(score)
     for g in group:
-        print(group[g])
+        if len(group[g] > 1):
+            print(group[g])
     # for s in score:
     #     print(s)
