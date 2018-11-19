@@ -1,4 +1,5 @@
 import re
+import string
 
 def extraction_price(detail):
     patterns = ['([0-9,]+) บาท', 'ราคา ([0-9,]+)']
@@ -75,16 +76,16 @@ def extraction_tower_after(tower, ext_tower):
         point = 0
         if tower[i+1] == '':
             continue
-        while tower[i+1][point] not in '1234567890 ':
+        while tower[i+1][point] not in '1234567890 \r\n':
             point += 1
             if point >= len(tower[i+1]):
                 break
         ext_tower_arr = tower[i+1][0:point]
         ext_tower_arr = re.split('[ /,]', ext_tower_arr)
         for value in ext_tower_arr:
-            if value and ext_tower is None and value in ['A', 'B', 'C', 'D']:
+            if value and ext_tower is None and (value in list(string.ascii_lowercase) or value in list(string.ascii_uppercase)):
                 ext_tower = value
-            if value and ext_tower != value and value in ['A','B','C','D']:
+            if value and ext_tower != value and (value in list(string.ascii_lowercase) or value in list(string.ascii_uppercase)):
                 return -1
     return ext_tower
 
