@@ -56,7 +56,7 @@ def extraction_size_after(size, ext_size):
 
 
 def extraction_size(detail):
-    ext_size = extraction_size_before(detail.split('ตรม'), [])
+    ext_size = extraction_size_before(detail.split('ตรม'), None)
     ext_size = extraction_size_before(detail.split('ตร.ม'), ext_size)
     ext_size = extraction_size_before(detail.split('ตารางเมตร'), ext_size)
     ext_size = extraction_size_before(detail.split('ตาราง.ม.'), ext_size)
@@ -95,7 +95,7 @@ def extraction_tower_after(tower, ext_tower):
 
 
 def extraction_tower(detail):
-    ext_tower = extraction_tower_after(detail.split('ตึก'), [])
+    ext_tower = extraction_tower_after(detail.split('ตึก'), None)
     ext_tower = extraction_tower_after(detail.split('อาคาร'), ext_tower)
     return ext_tower
 

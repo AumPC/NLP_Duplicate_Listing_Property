@@ -49,7 +49,7 @@ if __name__ == "__main__":
     print("-- Scoring --", '\n')
     score = []
     for group in rows_group:
-        if len(group) < 2:
+        if len(rows_group[group]) < 2:
             continue
         score += Sim.score_calculate(rows_group[group], WEIGHT, MIN_CONFIDENCE)
     for s in score:
