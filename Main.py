@@ -2,12 +2,12 @@ import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
 
-from math import log
-
 if __name__ == "__main__":
     print("-- Query --", '\n')
-    WEIGHT = {'price':0.2, 'size':0.2, 'tower':0.2, 'floor':0.2, 'type':0.2} # tune here
-    rows = QF.query()
+    WEIGHT = {'price': 0.2, 'size': 0.2, 'tower': 0.2, 'floor': 0.2, 'type': 0.2}  # tune here
+    MIN_CONFIDENCE = 0  # tune here
+    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100"
+    rows = QF.query(query_command)
     # rows = QF.read_json_file("./src/condo_listings_sample.json")
     filter_rows = []
     multiple_row = []
@@ -21,45 +21,36 @@ if __name__ == "__main__":
         if ext['price'] != [None, None] and ext['price'] != row['price']:
             not_match_row.append(row)
             continue
-        if ext['size'] != None and ext['size'][0] != '.' and ext['size'][-1] != '.' and float(ext['size']) != row['size']:
+        if ext['size'] is not None and ext['size'][0] != '.' and ext['size'][-1] != '.' and float(ext['size']) != row['size']:
             not_match_row.append(row)
             continue
-        if ext['tower'] != None and ext['tower'] != row['tower']:
+        if ext['tower'] is not None and ext['tower'] != row['tower']:
             not_match_row.append(row)
             continue
-        if ext['bedroom'] != None and ext['bedroom'] != row['bedroom']:
+        if ext['bedroom'] is not None and ext['bedroom'] != row['bedroom']:
             not_match_row.append(row)
             continue
-        if ext['bathroom'] != None and ext['bathroom'] != row['bathroom']:
+        if ext['bathroom'] is not None and ext['bathroom'] != row['bathroom']:
             not_match_row.append(row)
             continue
-    #     if ext['floor'] != None and ext['floor'] != row['floor']:
+    #     if ext['floor'] is not None and ext['floor'] != row['floor']:
     #         # field not match
     #         continue
-    #     if ext['type'] != None and ext['type'] != row['type']:
+    #     if ext['type'] is not None and ext['type'] != row['type']:
     #         # field not match
     #         continue
         row['ext'] = ext
         filter_rows.append(row)
 
-    print("Multiple Context" , len(multiple_row) , '\n')
-    print("Not Match Context" , len(not_match_row) , '\n')
-    rows_pair = QF.filter(filter_rows)
+    print("Multiple Context", len(multiple_row), '\n')
+    print("Not Match Context", len(not_match_row), '\n')
+    rows_group = QF.filter(filter_rows)
 
     print("-- Scoring --", '\n')
     score = []
-    for pairs in rows_pair:
-        if len(pairs) < 2:
+    for group in rows_group:
+        if len(rows_group[group]) < 2:
             continue
-        for first in range(len(pairs)-1):
-            for second in range(len(pairs)-first-1):
-                sec = first + second + 1
-                field_score = Sim.field_similarity([pairs[first],pairs[sec]], WEIGHT)
-                detail_score = Sim.detail_similarity(pairs[first]['detail'], pairs[sec]['detail'])
-                length_weight = 1/(1 + log(1 + (len(pairs[first]['detail']) + len(pairs[sec]['detail']))/2, 10))
-                confidence = (length_weight * field_score) + ((1 - length_weight) * detail_score)
-                if confidence > 0:
-                    # tune threshold here
-                    score.append([pairs[first]['id'], pairs[sec]['id'], confidence])
+        score += Sim.score_calculate(rows_group[group], WEIGHT, MIN_CONFIDENCE)
     for s in score:
         print(s)

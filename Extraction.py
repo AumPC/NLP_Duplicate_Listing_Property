@@ -1,6 +1,7 @@
 import re
 import string
 
+
 def extraction_price(detail):
     patterns = ['([0-9,]+) บาท', 'ราคา ([0-9,]+)']
     price = set()
@@ -15,6 +16,7 @@ def extraction_price(detail):
     if len(price) == 0:
         return [None, None]
     return [price.pop(), None]
+
 
 def extraction_size_before(size, ext_size):
     if ext_size == -1:
@@ -34,6 +36,7 @@ def extraction_size_before(size, ext_size):
                 return -1
     return ext_size
 
+
 def extraction_size_after(size, ext_size):
     if ext_size == -1:
         return -1
@@ -52,6 +55,7 @@ def extraction_size_after(size, ext_size):
                 return -1
     return ext_size
 
+
 def extraction_size(detail):
     ext_size = extraction_size_before(detail.split('ตรม'), None)
     ext_size = extraction_size_before(detail.split('ตร.ม'), ext_size)
@@ -68,6 +72,7 @@ def extraction_size(detail):
     ext_size = extraction_size_after(detail.split('ขนาด'), ext_size)
     ext_size = extraction_size_after(detail.split('พื้นที่'), ext_size)
     return ext_size
+
 
 def extraction_tower_after(tower, ext_tower):
     if ext_tower == -1:
@@ -89,10 +94,12 @@ def extraction_tower_after(tower, ext_tower):
                 return -1
     return ext_tower
 
+
 def extraction_tower(detail):
     ext_tower = extraction_tower_after(detail.split('ตึก'), None)
     ext_tower = extraction_tower_after(detail.split('อาคาร'), ext_tower)
     return ext_tower
+
 
 def extraction_bed_bath(detail):
     patterns = ['([0-9,]+) ห้องนอน ([0-9,]+) ห้องน้ำ', '([0-9,]+) นอน ([0-9,]+) น้ำ', 'ห้องนอน ([0-9,]+) ห้องน้ำ ([0-9,]+)', 'นอน ([0-9,]+) น้ำ ([0-9,]+)', 
@@ -112,12 +119,13 @@ def extraction_bed_bath(detail):
         return None, None
     return bedroom.pop(), bathroom.pop()
 
+
 def extraction(detail):
     # which field can't extract, return None
     # filter multiple value
 
-    ext = {'price':[None, None], 'size':None, 'tower':None, 'floor':None, 'type':None, 'bedroom':None, 'bathroom':None}    
-    if not detail : 
+    ext = {'price': [None, None], 'size': None, 'tower': None, 'floor': None, 'type': None, 'bedroom': None, 'bathroom': None}
+    if not detail:
         return ext
     
     ext['price'] = extraction_price(detail)
