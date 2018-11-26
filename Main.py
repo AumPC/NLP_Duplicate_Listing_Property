@@ -1,6 +1,7 @@
 import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
+import FindGroup as FG
 
 if __name__ == "__main__":
     print("-- Query --", '\n')
@@ -52,5 +53,7 @@ if __name__ == "__main__":
         if len(rows_group[group]) < 2:
             continue
         score += Sim.score_calculate(rows_group[group], WEIGHT, MIN_CONFIDENCE)
-    for s in score:
-        print(s)
+    group = FG.group_find(score)
+    for g in group:
+        if len(group[g]) > 1:
+            print(group[g])
