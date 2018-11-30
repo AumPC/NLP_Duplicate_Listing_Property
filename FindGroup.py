@@ -4,14 +4,13 @@ test_score = [  [1,2,0.6],
                 [2,3,0.3],
                 [2,4,0.1],
                 [3,4,0.5] ]
-def group_find(score):
+def group_find(score, threshold = 0.5):
     node = []
     for i in score:
         if not i[0] in node:
             node.append(i[0])
         if not i[1] in node:
             node.append(i[1])
-    threshold = 0.5 # <---- tune threshold here
     ans={}
     for i in node:
         ans[i]=i

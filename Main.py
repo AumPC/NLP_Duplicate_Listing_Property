@@ -2,14 +2,17 @@ import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
 import FindGroup as FG
+# from time import time
 
 if __name__ == "__main__":
     print("-- Query --", '\n')
-    WEIGHT = {'price': 0.2, 'size': 0.2, 'tower': 0.2, 'floor': 0.2, 'type': 0.2}  # tune here
-    MIN_CONFIDENCE = 0  # tune here
-    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100"
-    rows = QF.query(query_command)
-    # rows = QF.read_json_file("./src/condo_listings_sample.json")
+    # a = time()
+    parameter = QF.read_json_file("parameter.json")
+    # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100"
+    # rows = QF.query(query_command)
+    rows = QF.read_json_file("./src/condo_listings_sample.json")
+    # b = time()
+    # print(b-a)
     filter_rows = []
     multiple_row = []
     not_match_row = []
@@ -45,15 +48,23 @@ if __name__ == "__main__":
 
     print("Multiple Context", len(multiple_row), '\n')
     print("Not Match Context", len(not_match_row), '\n')
+    # c = time()
+    # print(c-b)
     rows_group = QF.filter(filter_rows)
-
+    # d = time()
+    # print(d-c)
     print("-- Scoring --", '\n')
     score = []
     for group in rows_group:
         if len(rows_group[group]) < 2:
             continue
-        score += Sim.score_calculate(rows_group[group], WEIGHT, MIN_CONFIDENCE)
-    group = FG.group_find(score)
+        score += Sim.score_calculate(rows_group[group], parameter['weight'], parameter['min_confidence'])
+    # e = time()
+    # print(e-d)
+    group = FG.group_find(score, 1)
     for g in group:
         if len(group[g]) > 1:
             print(group[g])
+    # f = time()
+    # print(f-e)
+    # print('total', f-a)

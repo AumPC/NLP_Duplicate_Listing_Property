@@ -1,6 +1,6 @@
 # pip install pythainlp
 from pythainlp.tokenize import word_tokenize
-from pythainlp.ner import thainer
+# from pythainlp.ner import thainer
 from math import log
 
 
