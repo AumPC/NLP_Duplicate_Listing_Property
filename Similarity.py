@@ -89,6 +89,6 @@ def score_calculate(docs, weight, min_confidence):
             detail_score = detail_similarity(docs[first]['detail'], docs[second]['detail'])
             length_weight = 1 / (1 + log(1 + (docs[first]['detail_length'] + docs[second]['detail_length']) / 2, 10))
             confidence = (length_weight * field_score) + ((1 - length_weight) * detail_score)
-            if confidence > min_confidence:
+            if confidence >= min_confidence:
                 score.append([docs[first]['id'], docs[second]['id'], confidence])
     return score

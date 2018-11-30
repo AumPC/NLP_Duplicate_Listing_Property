@@ -61,10 +61,10 @@ if __name__ == "__main__":
         score += Sim.score_calculate(rows_group[group], parameter['weight'], parameter['min_confidence'])
     # e = time()
     # print(e-d)
-    group = FG.group_find(score, 1)
-    for g in group:
-        if len(group[g]) > 1:
-            print(group[g])
+    group = FG.group_find(score, parameter['min_cluster_similarity'])
+    # for g in group:
+    #     if len(group[g]) > 1:
+    #         print(group[g])
     # f = time()
     # print(f-e)
     # print('total', f-a)
