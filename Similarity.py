@@ -3,6 +3,7 @@ from pythainlp.tokenize import word_tokenize
 # from pythainlp.ner import thainer
 from math import log
 from operator import itemgetter
+from collections import Counter
 from time import time
 
 
@@ -46,27 +47,6 @@ def field_similarity(a, b, weight):
     return price_score + size_score + tower_score + floor_score + type_score
 
 
-def is_number(num):
-    try:
-        float(num)
-        return True
-    except ValueError:
-        return False
-
-
-def bag_of_word(text):
-    word_list = word_tokenize(text, engine='newmm')
-    bag = {}
-    for word in word_list:
-        if word == ' ' or word == '\n' or is_number(word):
-            continue
-        elif word in bag:
-            bag[word] += 1
-        else:
-            bag[word] = 1
-    return bag
-
-
 def detail_similarity(bag_A, bag_B):
     size_A = 0
     size_B = 0
@@ -94,8 +74,9 @@ def score_calculate(docs, parameter):
         is_duplicate = False
         doc['detail_length'] = len(doc['detail'])
         a = time()
-        doc['detail'] = bag_of_word(doc['detail'])
+        word_list = word_tokenize(doc['detail'], engine='newmm')
         b = time()
+        doc['detail'] = {k: v for k, v in Counter(word_list).items() if not (k.isspace() or k.replace('.','',1).isdecimal())}
         tokenize_time += b - a
         for calculated_doc in calculated_docs:
             field_score = field_similarity(doc, calculated_doc, weight)
