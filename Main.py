@@ -54,17 +54,20 @@ if __name__ == "__main__":
     # d = time()
     # print(d-c)
     print("-- Scoring --", '\n')
-    score = []
+    strong_duplicate = []
+    medium_duplicate = []
+    weak_duplicate = []
     for group in rows_group:
         if len(rows_group[group]) < 2:
             continue
-        score += Sim.score_calculate(rows_group[group], parameter['weight'], parameter['min_confidence'])
+        strong_duplicate_group, duplicate_pair = Sim.score_calculate(rows_group[group], parameter['weight'], parameter['min_confidence'], parameter['hard_threshold'])
+        medium_duplicate_group, weak_duplicate_pair = FG.group_find(strong_duplicate_group, duplicate_pair, parameter['soft_threshold'])
+        strong_duplicate += strong_duplicate_group
+        medium_duplicate += medium_duplicate_group
+        weak_duplicate += weak_duplicate_pair
     # e = time()
     # print(e-d)
-    group = FG.group_find(score, parameter['min_cluster_similarity'])
-    # for g in group:
-    #     if len(group[g]) > 1:
-    #         print(group[g])
-    # f = time()
-    # print(f-e)
-    # print('total', f-a)
+    print(len(strong_duplicate), 'strong-duplicate groups')
+    print(len(medium_duplicate), 'medium-duplicate groups')
+    print(len(weak_duplicate), 'weak-duplicate pairs')
+    # print('total', e-a)

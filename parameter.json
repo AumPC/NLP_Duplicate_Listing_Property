@@ -7,5 +7,6 @@
     "type": 0.2
   },
   "min_confidence": 1,
-  "min_cluster_similarity": 1
+  "hard_threshold": 1,
+  "soft_threshold": 0.8
 }

@@ -4,7 +4,8 @@ test_score = [  [1,2,0.6],
                 [2,3,0.3],
                 [2,4,0.1],
                 [3,4,0.5] ]
-def group_find(score, threshold = 0.5):
+def group_find(group, score, threshold = 0.5):
+    weak_duplicate_score = []
     node = []
     for i in score:
         if not i[0] in node:
@@ -26,8 +27,9 @@ def group_find(score, threshold = 0.5):
                 tmp = b
                 b = ans[b]
                 ans[tmp] = ans[b]
-            ans[b] = ans[a]
-    group = {}
+            ans[a] = ans[b]
+        else:
+            weak_duplicate_score.append(i)
     for i in node:
         tmp = i
         while tmp != ans[tmp]:
@@ -36,10 +38,14 @@ def group_find(score, threshold = 0.5):
             group[tmp].append(i)
         else :
             group[tmp] = [i]
-    return group
+    group_list = []
+    for candidate in group:
+        group_list.append([candidate] + group[candidate])
+    return group_list, weak_duplicate_score
 
 if __name__ == '__main__':
-    group = group_find(test_score)
+    group, score = group_find({}, test_score)
     # print(group)
     for g in group:
         print(group[g])
+    print(len(score))

@@ -35,12 +35,12 @@ def different_character(a, b):
     return 1 - (metrix[len(a)][len(b)] / max(len(a), len(b)))
 
 
-def field_similarity(pair, weight):
-    price_score = weight['price'] * different_numerical(pair[0]['price'][0], pair[1]['price'][0])
-    size_score = weight['size'] * different_numerical(pair[0]['size'], pair[1]['size'])
-    tower_score = weight['tower'] * different_character(pair[0]['tower'], pair[1]['tower'])
-    floor_score = weight['floor'] * different_character(pair[0]['floor'], pair[1]['floor'])
-    type_score = weight['type'] * different_character(pair[0]['type'], pair[1]['type'])
+def field_similarity(a, b, weight):
+    price_score = weight['price'] * different_numerical(a['price'][0], b['price'][0])
+    size_score = weight['size'] * different_numerical(a['size'], b['size'])
+    tower_score = weight['tower'] * different_character(a['tower'], b['tower'])
+    floor_score = weight['floor'] * different_character(a['floor'], b['floor'])
+    type_score = weight['type'] * different_character(a['type'], b['type'])
     return price_score + size_score + tower_score + floor_score + type_score
 
 
@@ -78,17 +78,28 @@ def detail_similarity(bag_A, bag_B):
     return (1+intersect)/(1+min(size_A, size_B))
 
 
-def score_calculate(docs, weight, min_confidence):
+def score_calculate(docs, weight, min_confidence, threshold):
+    duplicate = {}
+    calculated_docs = []
     score = []
     for doc in docs:
+        is_duplicate = False
         doc['detail_length'] = len(doc['detail'])
         doc['detail'] = bag_of_word(doc['detail'])
-    for first in range(len(docs) - 1):
-        for second in range(first + 1, len(docs)):
-            field_score = field_similarity([docs[first], docs[second]], weight)
-            detail_score = detail_similarity(docs[first]['detail'], docs[second]['detail'])
-            length_weight = 1 / (1 + log(1 + (docs[first]['detail_length'] + docs[second]['detail_length']) / 2, 10))
+        for calculated_doc in calculated_docs:
+            field_score = field_similarity(doc, calculated_doc, weight)
+            detail_score = detail_similarity(doc['detail'], calculated_doc['detail'])
+            length_weight = 1 / (1 + log(1 + (doc['detail_length'] + calculated_doc['detail_length']) / 2, 10))
             confidence = (length_weight * field_score) + ((1 - length_weight) * detail_score)
+            if confidence >= threshold:
+                if calculated_doc['id'] in duplicate:
+                    duplicate[calculated_doc['id']].append(doc['id'])
+                else:
+                    duplicate[calculated_doc['id']] = [doc['id']]
+                is_duplicate = True
+                break
             if confidence >= min_confidence:
-                score.append([docs[first]['id'], docs[second]['id'], confidence])
-    return score
+                score.append([doc['id'], calculated_doc['id'], confidence])
+        if not is_duplicate:
+            calculated_docs.append(doc)
+    return duplicate, score
