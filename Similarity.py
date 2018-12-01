@@ -2,6 +2,8 @@
 from pythainlp.tokenize import word_tokenize
 # from pythainlp.ner import thainer
 from math import log
+from operator import itemgetter
+from time import time
 
 
 def different_numerical(a, b):
@@ -78,28 +80,41 @@ def detail_similarity(bag_A, bag_B):
     return (1+intersect)/(1+min(size_A, size_B))
 
 
-def score_calculate(docs, weight, min_confidence, threshold):
+def score_calculate(docs, parameter):
+    weight = parameter['weight']
+    min_confidence = parameter['min_confidence']
+    hard_threshold = parameter['hard_threshold']
+    soft_threshold = parameter['soft_threshold']
+    tokenize_time = 0
+    calculate_time = 0
     duplicate = {}
     calculated_docs = []
     score = []
     for doc in docs:
         is_duplicate = False
         doc['detail_length'] = len(doc['detail'])
+        a = time()
         doc['detail'] = bag_of_word(doc['detail'])
+        b = time()
+        tokenize_time += b - a
         for calculated_doc in calculated_docs:
             field_score = field_similarity(doc, calculated_doc, weight)
             detail_score = detail_similarity(doc['detail'], calculated_doc['detail'])
             length_weight = 1 / (1 + log(1 + (doc['detail_length'] + calculated_doc['detail_length']) / 2, 10))
             confidence = (length_weight * field_score) + ((1 - length_weight) * detail_score)
-            if confidence >= threshold:
+            if confidence >= hard_threshold:
                 if calculated_doc['id'] in duplicate:
                     duplicate[calculated_doc['id']].append(doc['id'])
                 else:
-                    duplicate[calculated_doc['id']] = [doc['id']]
+                    duplicate[calculated_doc['id']] = [calculated_doc['id'], doc['id']]
                 is_duplicate = True
                 break
             if confidence >= min_confidence:
                 score.append([doc['id'], calculated_doc['id'], confidence])
         if not is_duplicate:
             calculated_docs.append(doc)
-    return duplicate, score
+        calculate_time += time() - b
+    score = sorted(score, key=itemgetter(2), reverse=True)
+    medium_score = [s for s in score if s[2] >= soft_threshold]
+    weak_score = [s for s in score if s[2] < soft_threshold]
+    return duplicate, medium_score, weak_score, tokenize_time, calculate_time

@@ -6,7 +6,7 @@
     "floor": 0.2,
     "type": 0.2
   },
-  "min_confidence": 1,
+  "min_confidence": 0.75,
   "hard_threshold": 1,
   "soft_threshold": 0.8
 }

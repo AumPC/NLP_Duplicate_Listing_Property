@@ -1,51 +1,32 @@
-test_score = [  [1,2,0.6],
-                [1,3,0.2],
-                [1,4,0.1],
-                [2,3,0.3],
-                [2,4,0.1],
-                [3,4,0.5] ]
-def group_find(group, score, threshold = 0.5):
-    weak_duplicate_score = []
-    node = []
+from time import time
+
+def group_find(group, score):
+    expand_group = group.copy()
+    start = time()
+    ans = {i: i for i in {s[0] for s in score}.union({s[1] for s in score})}
     for i in score:
-        if not i[0] in node:
-            node.append(i[0])
-        if not i[1] in node:
-            node.append(i[1])
-    ans={}
-    for i in node:
-        ans[i]=i
-    for i in score:
-        if i[2] >= threshold:
-            a=i[0]
-            b=i[1]
-            while ans[a] != a:
-                tmp = a
-                a = ans[a]
-                ans[tmp] = ans[a]
-            while ans[b] != b:
-                tmp = b
-                b = ans[b]
-                ans[tmp] = ans[b]
-            ans[a] = ans[b]
-        else:
-            weak_duplicate_score.append(i)
-    for i in node:
-        tmp = i
-        while tmp != ans[tmp]:
-            tmp = ans[tmp]
-        if tmp in group:
-            group[tmp].append(i)
+        while ans[i[0]] != ans[ans[i[0]]]:
+            ans[i[0]] = ans[ans[i[0]]]
+        while ans[i[1]] != ans[ans[i[1]]]:
+            ans[i[1]] = ans[ans[i[1]]]
+        ans[i[0]] = ans[i[1]]
+    for i in ans:
+        while ans[i] != ans[ans[i]]:
+            ans[i] = ans[ans[i]]
+        if ans[i] in expand_group:
+            expand_group[ans[i]].append(i)
         else :
-            group[tmp] = [i]
-    group_list = []
-    for candidate in group:
-        group_list.append([candidate] + group[candidate])
-    return group_list, weak_duplicate_score
+            expand_group[ans[i]] = [i]
+    return expand_group, time()-start
 
 if __name__ == '__main__':
-    group, score = group_find({}, test_score)
-    # print(group)
+    test_score = [[1, 2, 0.6],
+                  [1, 3, 0.2],
+                  [1, 4, 0.1],
+                  [2, 3, 0.3],
+                  [2, 4, 0.1],
+                  [3, 4, 0.5]]
+    group, time = group_find({}, test_score)
+    print(group)
     for g in group:
         print(group[g])
-    print(len(score))
