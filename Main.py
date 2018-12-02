@@ -71,9 +71,9 @@ if __name__ == "__main__":
         calculate_time = 0
         strong_duplicate_group = defaultdict(list)
         calculated_docs = []
-        score = []
+        medium_duplicate_pair = []
+        weak_duplicate_pair = []
         for doc in rows_group[group]:
-            is_duplicate = False
             doc['detail_length'] = len(doc['detail'])
             doc['detail'] = Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['detail']
             aa = time()
@@ -82,20 +82,21 @@ if __name__ == "__main__":
             doc['detail'] = dict(Counter(word_list).most_common(parameter['most_frequency_word']))
             bb = time()
             tokenize_time += bb - aa
+            most_confidence, most_duplicate_doc = 0, ''
             for calculated_doc in calculated_docs:
                 confidence = Sim.score_calculate(doc, calculated_doc, parameter['weight'])
-                if confidence >= parameter['hard_threshold']:
+                if confidence > most_confidence:
+                    most_confidence, most_duplicate_doc = confidence, calculated_doc['id']
+                if most_confidence >= parameter['hard_threshold']:
                     strong_duplicate_group[calculated_doc['id']].append(doc['id'])
-                    is_duplicate = True
                     break
-                if confidence >= parameter['min_confidence']:
-                    score.append([doc['id'], calculated_doc['id'], confidence])
-            if not is_duplicate:
+            if most_confidence < parameter['hard_threshold']:
                 calculated_docs.append(doc)
+                if most_confidence >= parameter['soft_threshold']:
+                    medium_duplicate_pair.append([doc['id'], most_duplicate_doc, most_confidence])
+                elif most_confidence >= parameter['min_confidence']:
+                    weak_duplicate_pair.append([doc['id'], most_duplicate_doc, most_confidence])
             calculate_time += time() - bb
-        score = sorted(score, key=itemgetter(2), reverse=True)
-        medium_duplicate_pair = [s for s in score if s[2] >= parameter['soft_threshold']]
-        weak_duplicate_pair = [s for s in score if s[2] < parameter['soft_threshold']]
         medium_duplicate_group, group_time = FG.group_find(strong_duplicate_group, medium_duplicate_pair)
         strong_duplicate += [[k] + v for k, v in strong_duplicate_group.items()]
         medium_duplicate += list(medium_duplicate_group.values())
