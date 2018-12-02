@@ -63,16 +63,12 @@ if __name__ == "__main__":
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
-    all_tokenize_time = 0
-    all_calculate_time = 0
-    all_group_time = 0
+    all_tokenize_time = all_calculate_time = all_group_time = 0
     for group in rows_group:
-        tokenize_time = 0
-        calculate_time = 0
-        strong_duplicate_group = defaultdict(list)
+        tokenize_time = calculate_time = 0
+        strong_duplicate.append(defaultdict(list))
+        medium_duplicate.append([])
         calculated_docs = []
-        medium_duplicate_pair = []
-        weak_duplicate_pair = []
         for doc in rows_group[group]:
             doc['detail_length'] = len(doc['detail'])
             doc['detail'] = Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['detail']
@@ -88,22 +84,21 @@ if __name__ == "__main__":
                 if confidence > most_confidence:
                     most_confidence, most_duplicate_doc = confidence, calculated_doc['id']
                 if most_confidence >= parameter['hard_threshold']:
-                    strong_duplicate_group[calculated_doc['id']].append(doc['id'])
+                    strong_duplicate[-1][calculated_doc['id']].append(doc['id'])
                     break
             if most_confidence < parameter['hard_threshold']:
                 calculated_docs.append(doc)
                 if most_confidence >= parameter['soft_threshold']:
-                    medium_duplicate_pair.append([doc['id'], most_duplicate_doc, most_confidence])
+                    medium_duplicate[-1].append((doc['id'], most_duplicate_doc, most_confidence))
                 elif most_confidence >= parameter['min_confidence']:
-                    weak_duplicate_pair.append([doc['id'], most_duplicate_doc, most_confidence])
+                    weak_duplicate.append((doc['id'], most_duplicate_doc, most_confidence))
             calculate_time += time() - bb
-        medium_duplicate_group, group_time = FG.group_find(strong_duplicate_group, medium_duplicate_pair)
-        strong_duplicate += [[k] + v for k, v in strong_duplicate_group.items()]
-        medium_duplicate += list(medium_duplicate_group.values())
-        weak_duplicate += weak_duplicate_pair
+        medium_duplicate[-1], group_time = FG.group_find(strong_duplicate[-1], medium_duplicate[-1])
         all_tokenize_time += tokenize_time
         all_calculate_time += calculate_time
         all_group_time += group_time
+    strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
+    medium_duplicate = tuple(tuple(set([k] + v)) for md in medium_duplicate for k, v in md.items())
     weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
     e = time()
     print('tokenize time:',all_tokenize_time,'s')
