@@ -1,6 +1,7 @@
 # pip install pythainlp
 from pythainlp.tokenize import word_tokenize
 # from pythainlp.ner import thainer
+from Levenshtein import distance # pip install python-Levenshtein
 from math import log
 from operator import itemgetter
 from collections import Counter
@@ -16,24 +17,8 @@ def different_numerical(a, b):
 
 
 def different_character(a, b):
-    # Levenshtein distance
-    matrix = []
-    for i in range(len(a) + 1):
-        m = []
-        for j in range(len(b) + 1):
-            m.append(0)
-        matrix.append(m)
-    for i in range(len(a) + 1):
-        matrix[i][0] = i
-    for i in range(len(b) + 1):
-        matrix[0][i] = i
-    for i in range(len(a)):
-        for j in range(len(b)):
-            if a[i] == b[j]:
-                matrix[i+1][j+1] = matrix[i][j]
-            else:
-                matrix[i+1][j+1] = min(matrix[i][j], matrix[i+1][j], matrix[i][j+1]) + 1
-    return 1 - (matrix[len(a)][len(b)] / max(len(a), len(b)))
+    # pip install python-Levenshtein
+    return 1 - (distance(a, b) / max(len(a), len(b)))
 
 
 def field_similarity(a, b, weight):
