@@ -8,17 +8,27 @@ from collections import Counter
 from time import time
 
 
+def sampling(text, rate):
+    width = rate*len(text)/10
+    return ' '.join([text[int(len(text)/i-width):int(len(text)/i+width)] for i in range(1,10,2)])
+
 def different_numerical(a, b):
-    if a is b:
+    try:
+        return 1 - (abs(a - b) * 2 / (a + b))
+    except TypeError:
+        return int(a is b)
+    except ZeroDivisionError:
         return 1
-    if a is None or b is None:
-        return 0
-    return 1 - (abs(a - b) * 2 / (a + b))
 
 
 def different_character(a, b):
     # pip install python-Levenshtein
-    return 1 - (distance(a, b) / max(len(a), len(b)))
+    try:
+        return 1 - (distance(a, b) / max(len(a), len(b)))
+    except TypeError:
+        return int(a is b)
+    except ZeroDivisionError:
+        return 1
 
 
 def field_similarity(a, b, weight):
@@ -47,7 +57,7 @@ def score_calculate(docs, parameter):
         is_duplicate = False
         doc['detail_length'] = len(doc['detail'])
         a = time()
-        word_list = word_tokenize(doc['detail'], engine='newmm')
+        word_list = word_tokenize(sampling(doc['detail'],parameter['sampling_rate']), engine='newmm')
         b = time()
         word_list = {k: v for k, v in Counter(word_list).items() if not (k.isspace() or k.replace('.','',1).isdecimal())}
         doc['detail'] = dict(Counter(word_list).most_common(parameter['most_frequency_word']))
