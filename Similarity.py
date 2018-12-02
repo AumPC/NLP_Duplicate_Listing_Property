@@ -1,16 +1,11 @@
-# pip install pythainlp
-from pythainlp.tokenize import word_tokenize
-# from pythainlp.ner import thainer
-from Levenshtein import distance # pip install python-Levenshtein
+from Levenshtein import distance
 from math import log
-from operator import itemgetter
-from collections import Counter
-from time import time
 
 
 def sampling(text, rate):
     width = rate*len(text)/10
-    return ' '.join([text[int(len(text)/i-width):int(len(text)/i+width)] for i in range(1,10,2)])
+    return ' '.join([text[int(len(text)/i-width):int(len(text)/i+width)] for i in range(1, 10, 2)])
+
 
 def different_numerical(a, b):
     try:
@@ -47,39 +42,8 @@ def detail_similarity(a, b):
     return (1+intersect)/(1+min(size_a, size_b))
 
 
-def score_calculate(docs, parameter):
-    tokenize_time = 0
-    calculate_time = 0
-    duplicate = {}
-    calculated_docs = []
-    score = []
-    for doc in docs:
-        is_duplicate = False
-        doc['detail_length'] = len(doc['detail'])
-        a = time()
-        word_list = word_tokenize(sampling(doc['detail'],parameter['sampling_rate']), engine='newmm')
-        b = time()
-        word_list = {k: v for k, v in Counter(word_list).items() if not (k.isspace() or k.replace('.','',1).isdecimal())}
-        doc['detail'] = dict(Counter(word_list).most_common(parameter['most_frequency_word']))
-        tokenize_time += b - a
-        for calculated_doc in calculated_docs:
-            field_score = field_similarity(doc, calculated_doc, parameter['weight'])
-            detail_score = detail_similarity(doc['detail'], calculated_doc['detail'])
-            length_weight = 1 / (1 + log(1 + (doc['detail_length'] + calculated_doc['detail_length']) / 2, 10))
-            confidence = (length_weight * field_score) + ((1 - length_weight) * detail_score)
-            if confidence >= parameter['hard_threshold']:
-                if calculated_doc['id'] in duplicate:
-                    duplicate[calculated_doc['id']].append(doc['id'])
-                else:
-                    duplicate[calculated_doc['id']] = [calculated_doc['id'], doc['id']]
-                is_duplicate = True
-                break
-            if confidence >= parameter['min_confidence']:
-                score.append([doc['id'], calculated_doc['id'], confidence])
-        if not is_duplicate:
-            calculated_docs.append(doc)
-        calculate_time += time() - b
-    score = sorted(score, key=itemgetter(2), reverse=True)
-    medium_score = [s for s in score if s[2] >= parameter['soft_threshold']]
-    weak_score = [s for s in score if s[2] < parameter['soft_threshold']]
-    return duplicate, medium_score, weak_score, tokenize_time, calculate_time
+def score_calculate(a, b, weight):
+    field_score = field_similarity(a, b, weight)
+    detail_score = detail_similarity(a['detail'], b['detail'])
+    length_weight = 1 / (1 + log(1 + (a['detail_length'] + b['detail_length']) / 2, 10))
+    return (length_weight * field_score) + ((1 - length_weight) * detail_score)
