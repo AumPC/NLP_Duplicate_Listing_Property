@@ -2,6 +2,8 @@
 # import psycopg2.extras
 import json
 import re
+from operator import itemgetter
+from itertools import groupby
 
 
 def query(query_command):
@@ -52,10 +54,5 @@ def clear_tag(detail):
 def filter(rows):
     # compare every pair in rows. return pair which very possible to be duplicate
     # use price , size (in range) and project name
-    group = {}
-    for row in rows:
-        if row['project'] not in group:
-            group[row['project']] = [row]
-        else:
-            group[row['project']].append(row)
-    return group
+    group = {k: list(v) for k, v in groupby(rows, key=itemgetter('project'))}
+    return {k: v for k, v in group.items() if len(v) > 1}

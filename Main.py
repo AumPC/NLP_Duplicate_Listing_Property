@@ -7,7 +7,7 @@ import FindGroup as FG
 from pythainlp.tokenize import word_tokenize
 # from pythainlp.ner import thainer
 from operator import itemgetter
-from collections import Counter
+from collections import Counter, defaultdict
 from time import time
 
 if __name__ == "__main__":
@@ -67,30 +67,25 @@ if __name__ == "__main__":
     all_calculate_time = 0
     all_group_time = 0
     for group in rows_group:
-        if len(rows_group[group]) < 2:
-            continue
         tokenize_time = 0
         calculate_time = 0
-        strong_duplicate_group = {}
+        strong_duplicate_group = defaultdict(list)
         calculated_docs = []
         score = []
         for doc in rows_group[group]:
             is_duplicate = False
             doc['detail_length'] = len(doc['detail'])
+            doc['detail'] = Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['detail']
             aa = time()
-            word_list = word_tokenize(Sim.sampling(doc['detail'], parameter['sampling_rate']), engine='newmm')
-            bb = time()
-            word_list = {k: v for k, v in Counter(word_list).items() if
+            word_list = {k: v for k, v in Counter(word_tokenize(doc['detail'], engine='newmm')).items() if
                          not (k.isspace() or k.replace('.', '', 1).isdecimal())}
             doc['detail'] = dict(Counter(word_list).most_common(parameter['most_frequency_word']))
+            bb = time()
             tokenize_time += bb - aa
             for calculated_doc in calculated_docs:
                 confidence = Sim.score_calculate(doc, calculated_doc, parameter['weight'])
                 if confidence >= parameter['hard_threshold']:
-                    if calculated_doc['id'] in strong_duplicate_group:
-                        strong_duplicate_group[calculated_doc['id']].append(doc['id'])
-                    else:
-                        strong_duplicate_group[calculated_doc['id']] = [calculated_doc['id'], doc['id']]
+                    strong_duplicate_group[calculated_doc['id']].append(doc['id'])
                     is_duplicate = True
                     break
                 if confidence >= parameter['min_confidence']:
@@ -102,7 +97,7 @@ if __name__ == "__main__":
         medium_duplicate_pair = [s for s in score if s[2] >= parameter['soft_threshold']]
         weak_duplicate_pair = [s for s in score if s[2] < parameter['soft_threshold']]
         medium_duplicate_group, group_time = FG.group_find(strong_duplicate_group, medium_duplicate_pair)
-        strong_duplicate += list(strong_duplicate_group.values())
+        strong_duplicate += [[k] + v for k, v in strong_duplicate_group.items()]
         medium_duplicate += list(medium_duplicate_group.values())
         weak_duplicate += weak_duplicate_pair
         all_tokenize_time += tokenize_time

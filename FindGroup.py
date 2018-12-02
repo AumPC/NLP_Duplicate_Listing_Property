@@ -1,7 +1,8 @@
+from collections import defaultdict
 from time import time
 
 def group_find(group, score):
-    expand_group = group.copy()
+    expand_group = defaultdict(list, group)
     start = time()
     ans = {i: i for i in {s[0] for s in score}.union({s[1] for s in score})}
     for i in score:
@@ -13,10 +14,7 @@ def group_find(group, score):
     for i in ans:
         while ans[i] != ans[ans[i]]:
             ans[i] = ans[ans[i]]
-        if ans[i] in expand_group:
-            expand_group[ans[i]].append(i)
-        else :
-            expand_group[ans[i]] = [i]
+        expand_group[ans[i]].append(i)
     return expand_group, time()-start
 
 if __name__ == '__main__':
