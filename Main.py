@@ -80,7 +80,7 @@ if __name__ == "__main__":
             tokenize_time += bb - aa
             most_confidence, most_duplicate_doc = 0, ''
             for calculated_doc in calculated_docs:
-                confidence = Sim.score_calculate(doc, calculated_doc, parameter['weight'])
+                confidence = Sim.score_calculate(doc, calculated_doc, parameter['weight'], parameter['half_weight_frequency'])
                 if confidence > most_confidence:
                     most_confidence, most_duplicate_doc = confidence, calculated_doc['id']
                 if most_confidence >= parameter['hard_threshold']:

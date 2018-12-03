@@ -42,8 +42,8 @@ def detail_similarity(a, b):
     return (1+intersect)/(1+min(size_a, size_b))
 
 
-def score_calculate(a, b, weight):
+def score_calculate(a, b, weight, half_weight_frequency):
     field_score = field_similarity(a, b, weight)
     detail_score = detail_similarity(a['detail'], b['detail'])
-    length_weight = 1 / (1 + log(1 + (a['detail_length'] + b['detail_length']) / 2, 10))
+    length_weight = 1 / (1 + log(1 + (a['detail_length'] + b['detail_length']) / 2, half_weight_frequency + 1))
     return (length_weight * field_score) + ((1 - length_weight) * detail_score)
