@@ -8,16 +8,16 @@ from pythainlp.tokenize import word_tokenize
 # from pythainlp.ner import thainer
 from operator import itemgetter
 from collections import Counter, defaultdict
-from time import time
+# from time import time
 
 if __name__ == "__main__":
     print("-- Query --")
-    a = time()
+    # a = time()
     parameter = QF.read_json_file("parameter.json")
     # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100"
     # rows = QF.query(query_command)
     rows = QF.read_json_file("./src/condo_listings_sample.json")
-    b = time()
+    # b = time()
     print('query time:',b-a,'s')
     filter_rows = []
     multiple_row = []
@@ -54,10 +54,10 @@ if __name__ == "__main__":
 
     print("Multiple Context",len(multiple_row),'items')
     print("Not Match Context",len(not_match_row),'items')
-    c = time()
+    # c = time()
     print('extraction time:',c-b,'s')
     rows_group = QF.filter(filter_rows)
-    d = time()
+    # d = time()
     print('filter time:',d-c,'s')
     print("-- Scoring --")
     strong_duplicate = []
@@ -72,12 +72,12 @@ if __name__ == "__main__":
         for doc in rows_group[group]:
             doc['detail_length'] = len(doc['detail'])
             doc['detail'] = Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['detail']
-            aa = time()
+            # aa = time()
             word_list = {k: v for k, v in Counter(word_tokenize(doc['detail'], engine='newmm')).items() if
                          not (k.isspace() or k.replace('.', '', 1).isdecimal())}
             doc['detail'] = dict(Counter(word_list).most_common(parameter['most_frequency_word']))
-            bb = time()
-            tokenize_time += bb - aa
+            # bb = time()
+            # tokenize_time += bb - aa
             most_confidence, most_duplicate_doc = 0, ''
             for calculated_doc in calculated_docs:
                 confidence = Sim.score_calculate(doc, calculated_doc, parameter['weight'], parameter['half_weight_frequency'])
@@ -92,7 +92,7 @@ if __name__ == "__main__":
                     medium_duplicate[-1].append((doc['id'], most_duplicate_doc, most_confidence))
                 elif most_confidence >= parameter['min_confidence']:
                     weak_duplicate.append((doc['id'], most_duplicate_doc, most_confidence))
-            calculate_time += time() - bb
+            # calculate_time += time() - bb
         medium_duplicate[-1], group_time = FG.group_find(strong_duplicate[-1], medium_duplicate[-1])
         all_tokenize_time += tokenize_time
         all_calculate_time += calculate_time
@@ -100,18 +100,21 @@ if __name__ == "__main__":
     strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
     medium_duplicate = tuple(tuple(set([k] + v)) for md in medium_duplicate for k, v in md.items())
     weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
-    e = time()
-    print('tokenize time:',all_tokenize_time,'s')
-    print('calculate score time:',all_calculate_time,'s')
-    print('group time:',all_group_time,'s')
-    print('total scoring time:',e-d,'s')
+    # e = time()
+    # print('tokenize time:',all_tokenize_time,'s')
+    # print('calculate score time:',all_calculate_time,'s')
+    # print('group time:',all_group_time,'s')
+    # print('total scoring time:',e-d,'s')
     print(len(strong_duplicate), 'strong-duplicate groups')
     for i in range(3):
         print(strong_duplicate[i])
+    print('...')
     print(len(medium_duplicate), 'medium-duplicate groups')
     for i in range(3):
         print(medium_duplicate[i])
+    print('...')
     print(len(weak_duplicate), 'weak-duplicate pairs')
     for i in range(3):
         print(weak_duplicate[i])
-    print('total time:',e-a,'s')
+    print('...')
+    # print('total time:',e-a,'s')
