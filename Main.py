@@ -14,20 +14,33 @@ if __name__ == "__main__":
     print("-- Query --")
     a = time()
     parameter = QF.read_json_file("parameter.json")
-    # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100"
-    # rows = QF.query(query_command)
-    rows = QF.read_json_file("./src/condo_listings_sample.json")
+    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
+    rows = QF.query(query_command)
+    # rows = QF.read_json_file("./src/condo_listings_sample.json")
     b = time()
     print('query time:',b-a,'s')
     filter_rows = []
     multiple_row = []
     not_match_row = []
+    not_found = {'price': 0, 'size': 0, 'tower': 0, 'floor': 0, 'type': 0, 'bedroom': 0, 'bathroom': 0}
     print("-- Extraction & Filter --")
     for row in rows:
         ext = Extr.extraction(row['detail'])
         if ext == -1:
             multiple_row.append(row)
             continue 
+
+        if ext['price'] == [None, None]:
+            not_found['price'] += 1
+        if ext['size'] == None:
+            not_found['size'] += 1
+        if ext['tower'] == None:
+            not_found['tower'] += 1
+        if ext['bedroom'] == None:
+            not_found['bedroom'] += 1
+        if ext['bathroom'] == None:
+            not_found['bathroom'] += 1
+
         if ext['price'] != [None, None] and ext['price'] != row['price']:
             not_match_row.append(row)
             continue
@@ -52,6 +65,7 @@ if __name__ == "__main__":
         row['ext'] = ext
         filter_rows.append(row)
 
+    print("Not Found Context", not_found)
     print("Multiple Context",len(multiple_row),'items')
     print("Not Match Context",len(not_match_row),'items')
     c = time()

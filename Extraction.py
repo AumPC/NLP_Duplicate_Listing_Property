@@ -69,8 +69,8 @@ def extraction_size(detail):
     ext_size = extraction_size_before(detail.split('SQ.M'), ext_size)
     ext_size = extraction_size_before(detail.split('sqm '), ext_size)
     ext_size = extraction_size_before(detail.split('Sqm.'), ext_size)
-    ext_size = extraction_size_after(detail.split('ขนาด'), ext_size)
-    ext_size = extraction_size_after(detail.split('พื้นที่'), ext_size)
+    # ext_size = extraction_size_after(detail.split('ขนาด'), ext_size)
+    # ext_size = extraction_size_after(detail.split('พื้นที่'), ext_size)
     return ext_size
 
 
@@ -102,22 +102,37 @@ def extraction_tower(detail):
 
 
 def extraction_bed_bath(detail):
-    patterns = ['([0-9,]+) ห้องนอน ([0-9,]+) ห้องน้ำ', '([0-9,]+) นอน ([0-9,]+) น้ำ', 'ห้องนอน ([0-9,]+) ห้องน้ำ ([0-9,]+)', 'นอน ([0-9,]+) น้ำ ([0-9,]+)', 
-                '([0-9,]+)ห้องนอน ([0-9,]+)ห้องน้ำ', '([0-9,]+)นอน ([0-9,]+)น้ำ', 'ห้องนอน([0-9,]+)ห้องน้ำ([0-9,]+)', 'นอน([0-9,]+)น้ำ([0-9,]+)', 
-                '([0-9,]+) bedroom ([0-9,]+) bathroom', '([0-9,]+) bed ([0-9,]+) bath', 'bedroom ([0-9,]+) bathroom ([0-9,]+)', 'bed ([0-9,]+) bath ([0-9,]+)']
+    patterns = ['([0-9, ]+)ห้องนอน([0-9, ]+)ห้องน้ำ', 'ห้องนอน([0-9, ]+)ห้องน้ำ([0-9, ]+)',
+                '([0-9, ]+)นอน([0-9, ]+)น้ำ', 'นอน([0-9, ]+)น้ำ([0-9, ]+)', 
+                '([0-9, ]+)bedroom([0-9, ]+) bathroom', '([0-9, ]+)bed([0-9, ]+)bath',]
     bedroom = set()
     bathroom = set()
     for p in patterns:
         exp = re.compile(p)
         for i in exp.findall(detail):
-            bedroom.update(i[0])
-            bathroom.update(i[1])
+            bed = [j for j in re.split(' ', re.sub(',', '', i[0])) if j != '' and int(j) < 10]
+            bed = [bed[-1]] if len(bed) > 0 else None
+            bath = [j for j in re.split(' ', re.sub(',', '', i[1])) if j != '' and int(j) < 10]
+            bath = [bath[-1]] if len(bath) > 0 else None
+            if bed is not None and bath is not None:
+                bedroom.update(bed)
+                bathroom.update(bath)
+    if len(bedroom) > 1:
+        bedroom = -1
+    elif len(bedroom) == 0:
+        bedroom = None
+    else:
+        bedroom = bedroom.pop()
 
-    if len(bedroom) > 1 and len(bathroom) > 1:
-        return -1, -1
-    if len(bedroom) == 0 and len(bathroom) == 0:
-        return None, None
-    return bedroom.pop(), bathroom.pop()
+    if len(bathroom) > 1:
+        bathroom = -1
+    elif len(bathroom) == 0:
+        bathroom = None
+    else:
+        bathroom = bathroom.pop()
+
+    return bedroom, bathroom
+
 
 
 def extraction(detail):
