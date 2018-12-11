@@ -70,8 +70,8 @@ if __name__ == "__main__":
         medium_duplicate.append([])
         calculated_docs = []
         for doc in rows_group[group]:
-            doc['detail_length'] = len(doc['detail'])
-            doc['detail'] = Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['detail']
+            doc['detail_length'] = len(doc['detail']) + len(doc['title'])
+            doc['detail'] = doc['title'] + Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
             # aa = time()
             word_list = {k: v for k, v in Counter(word_tokenize(doc['detail'], engine='newmm')).items() if
                          not (k.isspace() or k.replace('.', '', 1).isdecimal())}
