@@ -6,7 +6,11 @@ def extraction_price_before(price, ext_price):
         return -1
     for i in range(len(price)-1):
         point = len(price[i])-1
-        while price[i][point] in '0123456789 ,':
+        while price[i][point] in ' ,':
+            point -= 1
+            if point < 1:
+                break
+        while price[i][point] in '0123456789,':
             point -= 1
             if point < 0:
                 break
@@ -26,7 +30,13 @@ def extraction_price_after(price, ext_price):
         return -1
     for i in range(len(price)-1):
         point = 0
-        while price[i+1][point] in '0123456789 ,':
+        if len(price[i+1]) == 0:
+            continue
+        while price[i+1][point] in ' ,':
+            point += 1
+            if point >= len(price[i+1]):
+                break
+        while point < len(price[i+1]) and price[i+1][point] in '0123456789,':
             point += 1
             if point >= len(price[i+1]):
                 break
@@ -182,6 +192,7 @@ def extraction(detail):
     ext['size'] = extraction_size(detail)
     ext['tower'] = extraction_tower(detail)
     ext['bedroom'], ext['bathroom'] = extraction_bed_bath(detail)
+
     if ext['price'] == -1 or ext['size'] == -1 or ext['tower'] == -1 or ext['bedroom'] == -1 or ext['bathroom'] == -1:
         return -1
 
