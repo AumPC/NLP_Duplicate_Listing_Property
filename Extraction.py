@@ -51,7 +51,7 @@ def extraction_price_after(detail, keyword):
 def extraction_price(detail):
     prefix_keyword = ['บาท', 'baht']
     postfix_keyword = ['ราคา']
-    ext_price = list(set(extraction_size_before(detail, prefix_keyword) + extraction_size_after(detail, postfix_keyword)))
+    ext_price = list(set(extraction_price_before(detail, prefix_keyword) + extraction_price_after(detail, postfix_keyword)))
     if len(ext_price) > 2:
         return -1
     if not ext_price:

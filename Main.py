@@ -14,9 +14,9 @@ if __name__ == "__main__":
     print("-- Query --")
     # a = time()
     parameter = QF.read_json_file("parameter.json")
-    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
-    rows = QF.query(query_command)
-    # rows = QF.read_json_file("./src/condo_listings_sample.json")
+    # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
+    # rows = QF.query(query_command)
+    rows = QF.read_json_file("./src/condo_listings_sample.json")
     # b = time()
     # print('query time:',b-a,'s')
     filter_rows = []
@@ -47,7 +47,7 @@ if __name__ == "__main__":
             continue
         if ext['tower'] is not None and ext['tower'] != row['tower']:
             if row['tower'] == '':
-                 row['tower']  = ext['tower']
+                row['tower'] = ext['tower']
             else:
                 not_match_row.append(row)
                 continue
@@ -87,9 +87,8 @@ if __name__ == "__main__":
             doc['detail_length'] = len(doc['detail']) + len(doc['title'])
             doc['detail'] = doc['title'] + Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
             # aa = time()
-            word_list = {k: v for k, v in Counter(word_tokenize(doc['detail'], engine='newmm')).items() if
-                         not (k.isspace() or k.replace('.', '', 1).isdecimal())}
-            doc['detail'] = dict(Counter(word_list).most_common(parameter['most_frequency_word']))
+            doc['detail'] = {k: v for k, v in Counter(word_tokenize(doc['detail'], engine='newmm')).items() if
+                             not (k.isspace() or k.replace('.', '', 1).isdecimal())}
             # bb = time()
             # tokenize_time += bb - aa
             most_confidence, most_duplicate_doc = 0, ''

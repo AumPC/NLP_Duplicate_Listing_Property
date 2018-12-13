@@ -7,7 +7,6 @@
     "type": 0.2
   },
   "sampling_rate": 0.1,
-  "most_frequency_word": 20,
   "half_weight_frequency": 9,
   "min_confidence": 0.75,
   "hard_threshold": 1,
