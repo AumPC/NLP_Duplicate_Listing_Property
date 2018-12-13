@@ -1,9 +1,10 @@
-# import psycopg2
-# import psycopg2.extras
+import psycopg2
+import psycopg2.extras
 import json
 import re
 from operator import itemgetter
 from itertools import groupby
+from string import ascii_letters, punctuation, digits, whitespace
 
 
 def query(query_command):
@@ -32,7 +33,7 @@ def query(query_command):
         condo['type'] = row['room_information']['room_type']
         condo['bedroom'] = row['room_information']['no_of_bed']
         condo['bathroom'] = row['room_information']['no_of_bath']
-        condo['detail'] = clear_tag(row['detail'])
+        condo['detail'] = normalize_space(filter_special_character(clear_tag(row['detail'])))
         listing.append(condo)
     return listing
 
@@ -42,12 +43,19 @@ def read_json_file(filename):
     data = json.load(open_file)
     return data
 
-
-def clear_tag(detail):
-    detail = re.sub('<.*?>|&nbsp;|&gt;|==|\*\*|---|\\\\|//', ' ', detail)
-    # print (detail, '\n')
+def normalize_space(detail):
+    detail = ' '.join(detail.split())
     return detail
 
+def clear_tag(detail):
+    detail = re.sub('<.*?>|&nbsp;|&gt;|&lt;|==|\*\*|---|\\\\|//', ' ', detail)
+    return detail
+
+def filter_special_character(detail):
+    allowed = set(ascii_letters + digits + punctuation + whitespace)
+    output = [char for char in detail if char in allowed or (ord(char) >= 3585 and ord(char) <= 3674)]
+    detail = ''.join(output)
+    return detail
 
 def filter(rows):
     # compare every pair in rows. return pair which very possible to be duplicate

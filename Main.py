@@ -14,20 +14,31 @@ if __name__ == "__main__":
     print("-- Query --")
     # a = time()
     parameter = QF.read_json_file("parameter.json")
-    # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100"
-    # rows = QF.query(query_command)
-    rows = QF.read_json_file("./src/condo_listings_sample.json")
+    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
+    rows = QF.query(query_command)
+    # rows = QF.read_json_file("./src/condo_listings_sample.json")
     # b = time()
     # print('query time:',b-a,'s')
     filter_rows = []
     multiple_row = []
     not_match_row = []
+    not_found = {'price': 0, 'size': 0, 'tower': 0, 'bedroom': 0, 'bathroom': 0}
     print("-- Extraction & Filter --")
     for row in rows:
         ext = Extr.extraction(row['detail'])
         if ext == -1:
             multiple_row.append(row)
             continue
+        if ext['price'] is None:
+            not_found['price'] += 1
+        if ext['size'] is None:
+            not_found['size'] += 1
+        if ext['tower'] is None:
+            not_found['tower'] += 1
+        if ext['bedroom'] is None:
+            not_found['bedroom'] += 1
+        if ext['bathroom'] is None:
+            not_found['bathroom'] += 1
         if ext['price'] is not None and ext['price'] != row['price']:
             not_match_row.append(row)
             continue
@@ -35,8 +46,11 @@ if __name__ == "__main__":
             not_match_row.append(row)
             continue
         if ext['tower'] is not None and ext['tower'] != row['tower']:
-            not_match_row.append(row)
-            continue
+            if row['tower'] == '':
+                 row['tower']  = ext['tower']
+            else:
+                not_match_row.append(row)
+                continue
         if ext['bedroom'] is not None and ext['bedroom'] != row['bedroom']:
             not_match_row.append(row)
             continue
@@ -51,8 +65,9 @@ if __name__ == "__main__":
     #         continue
         row['ext'] = ext
         filter_rows.append(row)
-    print("Multiple Context",len(multiple_row),'items')
-    print("Not Match Context",len(not_match_row),'items')
+    print("Not Found Context", not_found)
+    print("Multiple Context", len(multiple_row), 'items')
+    print("Not Match Context", len(not_match_row), 'items')
     # c = time()
     # print('extraction time:',c-b,'s')
     rows_group = QF.filter(filter_rows)
