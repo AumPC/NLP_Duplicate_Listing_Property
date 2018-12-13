@@ -48,8 +48,11 @@ if __name__ == "__main__":
             not_match_row.append(row)
             continue
         if ext['tower'] is not None and ext['tower'] != row['tower']:
-            not_match_row.append(row)
-            continue
+            if row['tower'] == '':
+                 row['tower']  = ext['tower']
+            else :
+                not_match_row.append(row)
+                continue
         if ext['bedroom'] is not None and ext['bedroom'] != row['bedroom']:
             not_match_row.append(row)
             continue

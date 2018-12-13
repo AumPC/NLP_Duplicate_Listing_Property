@@ -29,8 +29,6 @@ def query(query_command):
         condo['project'] = row['condo_project_id']
         condo['size'] = float(row['room_information']['room_area'])
         condo['tower'] = row['room_information']['building']
-        if not condo['tower']:
-            condo['tower'] = 'TEST'
         condo['floor'] = row['room_information']['on_floor']
         condo['type'] = row['room_information']['room_type']
         condo['bedroom'] = row['room_information']['no_of_bed']

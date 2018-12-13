@@ -62,7 +62,7 @@ def extraction_size(detail):
     pattern = [
         'ตรม', 'ตร.ม', 'ตร ม', 'ตร. ม',
         'ตารางเมตร', 'ตารางวา', 'ตาราง.ม.',
-        'Square meters',
+        'Square meters', 'Square meters',
         'SQ.M', 'SQ.m', 'Sq.M', 'Sq.m', 'sQ.M', 'sQ.m', 'sq.M', 'sq.m',
         'SQM ', 'SQm ', 'SqM ', 'Sqm ', 'sQM ', 'sQm ', 'sqM ', 'sqm ',
         'SQM.', 'SQm.', 'SqM.', 'Sqm.', 'sQM.', 'sQm.', 'sqM.', 'sqm.',
@@ -81,20 +81,28 @@ def extraction_size(detail):
 def extraction_tower_after(tower, ext_tower):
     if ext_tower == -1:
         return -1
+    thai_building = ['เอ', 'บี', 'ซี', 'ดี', 'อี', 'เอฟ', 'จี']
+    number_building = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+    name_building = set( thai_building + number_building + list(string.ascii_uppercase) + list(string.ascii_lowercase))
     for i in range(len(tower)-1):
         point = 0
         if tower[i+1] == '':
             continue
-        while tower[i+1][point] not in '1234567890 \r\n':
+        found = 0
+        while point < len(tower[i+1]) and (tower[i+1][point] not in ' \r\n' or found != 2):
+            if tower[i+1][point] in '0123456789' and found <= 1:
+                found = 1
+            elif tower[i+1][point] not in '\r\n ':
+                found = 2
             point += 1
-            if point >= len(tower[i+1]):
-                break
         ext_tower_arr = tower[i+1][0:point]
+        if 'ตึก' in ext_tower_arr or 'อาคาร' in ext_tower_arr or 'คัน' in ext_tower_arr or 'ชั้น' in ext_tower_arr:
+            continue
         ext_tower_arr = re.split('[ /,]', ext_tower_arr)
         for value in ext_tower_arr:
-            if value and ext_tower is None and (value in list(string.ascii_lowercase) or value in list(string.ascii_uppercase)):
+            if value and ext_tower is None and value in name_building:
                 ext_tower = value
-            if value and ext_tower != value and (value in list(string.ascii_lowercase) or value in list(string.ascii_uppercase)):
+            if value and ext_tower != value and value in name_building:
                 return -1
     return ext_tower
 
