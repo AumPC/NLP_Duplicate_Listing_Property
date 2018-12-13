@@ -36,14 +36,15 @@ def field_similarity(a, b, weight):
 
 
 def detail_similarity(a, b):
-    size_a = sum(a.values())
-    size_b = sum(b.values())
+    # size_a = sum(a.values())
+    # size_b = sum(b.values())
     intersect = sum([min(a[word], b[word]) for word in set(a.keys()).intersection(set(b.keys()))])
-    return (1+intersect)/(1+min(size_a, size_b))
+    union = sum([max(a.get(word,0), b.get(word,0)) for word in set(a.keys()).union(set(b.keys()))])
+    return (1+intersect)/(1+union)
 
 
-def score_calculate(a, b, weight):
+def score_calculate(a, b, weight, half_weight_frequency):
     field_score = field_similarity(a, b, weight)
     detail_score = detail_similarity(a['detail'], b['detail'])
-    length_weight = 1 / (1 + log(1 + (a['detail_length'] + b['detail_length']) / 2, 10))
+    length_weight = 1 / (1 + log(1 + (a['detail_length'] + b['detail_length']) / 2, half_weight_frequency + 1))
     return (length_weight * field_score) + ((1 - length_weight) * detail_score)
