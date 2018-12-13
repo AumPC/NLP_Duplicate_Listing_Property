@@ -3,11 +3,11 @@ import string
 
 
 def extraction_price(detail):
-    patterns = ['([0-9,]+) บาท', 'ราคา ([0-9,]+)']
+    patterns = ['([0-9, ]+)บาท', 'ราคา([0-9, ]+)']
     price = set()
     for p in patterns:
         exp = re.compile(p)
-        s = [float(re.sub(',', '', i)) for i in exp.findall(detail)]
+        s = [float(re.sub('[, ]', '', i)) for i in exp.findall(detail) if re.sub('[, ]', '', i) != '']
         price.update(s)
 
     price = [i for i in price if 1000 < i < 1000000]
@@ -30,6 +30,8 @@ def extraction_size_before(size, ext_size):
         ext_size_arr = size[i][point+1:]
         ext_size_arr = re.split('[ /,]', ext_size_arr)
         for value in ext_size_arr:
+            if value == '.':
+                continue
             if value and ext_size is None:
                 ext_size = value
             if value and ext_size != value:
@@ -57,18 +59,20 @@ def extraction_size_after(size, ext_size):
 
 
 def extraction_size(detail):
-    ext_size = extraction_size_before(detail.split('ตรม'), None)
-    ext_size = extraction_size_before(detail.split('ตร.ม'), ext_size)
-    ext_size = extraction_size_before(detail.split('ตารางเมตร'), ext_size)
-    ext_size = extraction_size_before(detail.split('ตาราง.ม.'), ext_size)
-    ext_size = extraction_size_before(detail.split('Square meters'), ext_size)
-    ext_size = extraction_size_before(detail.split('sq.m.'), ext_size)
-    ext_size = extraction_size_before(detail.split('Sq.M.'), ext_size)
-    ext_size = extraction_size_before(detail.split('sqm.'), ext_size)
-    ext_size = extraction_size_before(detail.split('Sq.m'), ext_size)
-    ext_size = extraction_size_before(detail.split('SQ.M'), ext_size)
-    ext_size = extraction_size_before(detail.split('sqm '), ext_size)
-    ext_size = extraction_size_before(detail.split('Sqm.'), ext_size)
+    pattern = [
+        'ตรม', 'ตร.ม', 'ตร ม', 'ตร. ม',
+        'ตารางเมตร', 'ตารางวา', 'ตาราง.ม.',
+        'Square meters',
+        'SQ.M', 'SQ.m', 'Sq.M', 'Sq.m', 'sQ.M', 'sQ.m', 'sq.M', 'sq.m',
+        'SQM ', 'SQm ', 'SqM ', 'Sqm ', 'sQM ', 'sQm ', 'sqM ', 'sqm ',
+        'SQM.', 'SQm.', 'SqM.', 'Sqm.', 'sQM.', 'sQm.', 'sqM.', 'sqm.',
+        'sqm,'
+    ]
+    ext_size = None
+    for pat in pattern:
+        ext_size = extraction_size_before(detail.split(pat), ext_size)
+    ext_size = extraction_size_after(detail.split('sq.m.):'), ext_size)
+
     # ext_size = extraction_size_after(detail.split('ขนาด'), ext_size)
     # ext_size = extraction_size_after(detail.split('พื้นที่'), ext_size)
     return ext_size

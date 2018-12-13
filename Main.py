@@ -22,7 +22,7 @@ if __name__ == "__main__":
     filter_rows = []
     multiple_row = []
     not_match_row = []
-    not_found = {'price': 0, 'size': 0, 'tower': 0, 'floor': 0, 'type': 0, 'bedroom': 0, 'bathroom': 0}
+    not_found = {'price': 0, 'size': 0, 'tower': 0, 'bedroom': 0, 'bathroom': 0}
     print("-- Extraction & Filter --")
     for row in rows:
         ext = Extr.extraction(row['detail'])
