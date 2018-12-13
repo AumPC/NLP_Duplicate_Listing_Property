@@ -27,7 +27,10 @@ def different_character(a, b):
 
 
 def field_similarity(a, b, weight):
-    price_score = weight['price'] * different_numerical(a['price'][0], b['price'][0])
+    try:
+        price_score = weight['price'] * different_numerical(a['price'][0], b['price'][0])
+    except TypeError:
+        price_score = weight['price'] * int(a['price'] is b['price'])
     size_score = weight['size'] * different_numerical(a['size'], b['size'])
     tower_score = weight['tower'] * different_character(a['tower'], b['tower'])
     floor_score = weight['floor'] * different_character(a['floor'], b['floor'])

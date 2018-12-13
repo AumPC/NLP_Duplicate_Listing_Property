@@ -22,9 +22,9 @@ def query(query_command):
         if 'max_rental_price' in row['price']['rental'] and row['price']['rental']['max_rental_price']:
             condo['price'] = [float(row['price']['rental']['min_rental_price']), float(row['price']['rental']['max_rental_price'])]
         elif row['price']['rental']['min_rental_price']:
-            condo['price'] = [float(row['price']['rental']['min_rental_price']), None]
+            condo['price'] = [float(row['price']['rental']['min_rental_price']), float(row['price']['rental']['min_rental_price'])]
         else:
-            condo['price'] = [0, None]
+            condo['price'] = None
         condo['project'] = row['condo_project_id']
         condo['size'] = float(row['room_information']['room_area'])
         condo['tower'] = row['room_information']['building']

@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # rows = QF.query(query_command)
     rows = QF.read_json_file("./src/condo_listings_sample.json")
     # b = time()
-    print('query time:',b-a,'s')
+    # print('query time:',b-a,'s')
     filter_rows = []
     multiple_row = []
     not_match_row = []
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         if ext == -1:
             multiple_row.append(row)
             continue 
-        if ext['price'] != [None, None] and ext['price'] != row['price']:
+        if ext['price'] is not None and ext['price'] != row['price']:
             not_match_row.append(row)
             continue
         if ext['size'] is not None and ext['size'][0] != '.' and ext['size'][-1] != '.' and float(ext['size']) != row['size']:
@@ -51,19 +51,18 @@ if __name__ == "__main__":
     #         continue
         row['ext'] = ext
         filter_rows.append(row)
-
     print("Multiple Context",len(multiple_row),'items')
     print("Not Match Context",len(not_match_row),'items')
     # c = time()
-    print('extraction time:',c-b,'s')
+    # print('extraction time:',c-b,'s')
     rows_group = QF.filter(filter_rows)
     # d = time()
-    print('filter time:',d-c,'s')
+    # print('filter time:',d-c,'s')
     print("-- Scoring --")
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
-    all_tokenize_time = all_calculate_time = all_group_time = 0
+    # all_tokenize_time = all_calculate_time = all_group_time = 0
     for group in rows_group:
         tokenize_time = calculate_time = 0
         strong_duplicate.append(defaultdict(list))
@@ -94,9 +93,9 @@ if __name__ == "__main__":
                     weak_duplicate.append((doc['id'], most_duplicate_doc, most_confidence))
             # calculate_time += time() - bb
         medium_duplicate[-1], group_time = FG.group_find(strong_duplicate[-1], medium_duplicate[-1])
-        all_tokenize_time += tokenize_time
-        all_calculate_time += calculate_time
-        all_group_time += group_time
+        # all_tokenize_time += tokenize_time
+        # all_calculate_time += calculate_time
+        # all_group_time += group_time
     strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
     medium_duplicate = tuple(tuple(set([k] + v)) for md in medium_duplicate for k, v in md.items())
     weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
