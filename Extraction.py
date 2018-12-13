@@ -93,11 +93,11 @@ def extraction_bed_bath(detail):
         for i in exp.findall(detail):
             bedroom.update(i[0])
             bathroom.update(i[1])
-    if len(bedroom) > 1 and len(bathroom) > 1:
+    if len(bedroom) > 1 or len(bathroom) > 1:
         return -1, -1
-    if len(bedroom) == 0 and len(bathroom) == 0:
-        return None, None
-    return bedroom.pop(), bathroom.pop()
+    bedroom = bedroom.pop() if len(bedroom) > 0 else None
+    bathroom = bathroom.pop() if len(bathroom) > 0 else None
+    return bedroom, bathroom
 
 
 def extraction(detail):

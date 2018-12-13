@@ -27,7 +27,7 @@ if __name__ == "__main__":
         ext = Extr.extraction(row['detail'])
         if ext == -1:
             multiple_row.append(row)
-            continue 
+            continue
         if ext['price'] is not None and ext['price'] != row['price']:
             not_match_row.append(row)
             continue
