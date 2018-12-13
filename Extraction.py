@@ -1,22 +1,53 @@
 import re
 import string
 
+def extraction_price_before(price, ext_price):
+    if ext_price == -1:
+        return -1
+    for i in range(len(price)-1):
+        point = len(price[i])-1
+        while price[i][point] in '0123456789 ,':
+            point -= 1
+            if point < 0:
+                break
+        ext_price_arr = price[i][point+1:]
+        ext_str = re.sub('[, ]', '', ext_price_arr)
+        value = float(ext_str) if ext_str != "" else None
+        if not value or not (1000 < value < 1000000):
+            continue
+        if value and ext_price is None:
+            ext_price = value
+        if value and ext_price != value:
+            return -1
+    return ext_price
+
+def extraction_price_after(price, ext_price):
+    if ext_price == -1:
+        return -1
+    for i in range(len(price)-1):
+        point = 0
+        while price[i+1][point] in '0123456789 ,':
+            point += 1
+            if point >= len(price[i+1]):
+                break
+        ext_price_arr = price[i+1][0:point]
+        ext_str = re.sub('[, ]', '', ext_price_arr)
+        value = float(ext_str) if ext_str != "" else None
+        if not value or not (1000 < value < 1000000):
+            continue
+        if value and ext_price is None:
+            ext_price = value
+        if value and ext_price != value:
+            return -1
+    return ext_price
 
 def extraction_price(detail):
-    patterns = ['([0-9, ]+)บาท', 'ราคา([0-9, ]+)']
-    price = set()
-    for p in patterns:
-        exp = re.compile(p)
-        s = [float(re.sub('[, ]', '', i)) for i in exp.findall(detail) if re.sub('[, ]', '', i) != '']
-        price.update(s)
-
-    price = [i for i in price if 1000 < i < 1000000]
-    if len(price) > 1:
-        return -1
-    if len(price) == 0:
-        return [None, None]
-    return [price.pop(), None]
-
+    ext_price = None
+    ext_price = extraction_price_before(detail.split('บาท'), ext_price)
+    ext_price = extraction_price_before(detail.split('baht'), ext_price)
+    ext_price = extraction_price_after(detail.split('ราคา'), ext_price)
+    
+    return ext_price if ext_price == -1 else [ext_price, None]
 
 def extraction_size_before(size, ext_size):
     if ext_size == -1:
