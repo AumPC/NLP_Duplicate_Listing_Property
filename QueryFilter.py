@@ -33,7 +33,7 @@ def query(query_command):
         condo['type'] = row['room_information']['room_type']
         condo['bedroom'] = row['room_information']['no_of_bed']
         condo['bathroom'] = row['room_information']['no_of_bath']
-        condo['detail'] = filter_special_character(clear_tag(row['detail']))
+        condo['detail'] = normalize_space(filter_special_character(clear_tag(row['detail'])))
         listing.append(condo)
     return listing
 
@@ -43,6 +43,9 @@ def read_json_file(filename):
     data = json.load(open_file)
     return data
 
+def normalize_space(detail):
+    detail = ' '.join(detail.split())
+    return detail
 
 def clear_tag(detail):
     detail = re.sub('<.*?>|&nbsp;|&gt;|&lt;|==|\*\*|---|\\\\|//', ' ', detail)
