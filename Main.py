@@ -51,7 +51,7 @@ if __name__ == "__main__":
     print("-- Query --")
     # a = time()
     parameter = QF.read_json_file("parameter.json")
-    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC LIMIT 1500"
+    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
     rows = QF.query(query_command)
 
     # Start Construct results variable
