@@ -1,6 +1,4 @@
 from Levenshtein import distance, jaro, jaro_winkler, ratio
-from pyxdameraulevenshtein import normalized_damerau_levenshtein_distance
-from difflib import SequenceMatcher
 from distance import jaccard, sorensen
 from similarity.metric_lcs import MetricLCS
 from similarity.ngram import NGram
@@ -9,7 +7,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 from math import log
 # pip install python-Levenshtein
 # pip install numpy
-# pip install pyxDamerauLevenshtein
 # pip install Distance
 # pip install strsim
 # pip install sklearn
@@ -35,8 +32,6 @@ def different_character(a, b):
         # return jaro(a, b)
         # return jaro_winkler(a, b)
         # return ratio(a, b)
-        # return 1 - normalized_damerau_levenshtein_distance(a, b)
-        # return SequenceMatcher(None, a, b).ratio()  # VERY SLOW ! BE CAREFUL !
         # return 1 - jaccard(a, b)
         # return 1 - sorensen(a, b)
         # return 1 - MetricLCS().distance(a, b)
@@ -61,15 +56,15 @@ def field_similarity(a, b, weight):
 
 
 def detail_similarity(a, b):
-    # intersect = sum([min(a[i], b[i]) for i in range(len(a))])
-    # union = sum([max(a[i], b[i]) for i in range(len(a))])
-    # return (1+intersect)/(1+union)
+    intersect = sum([min(a[i], b[i]) for i in range(len(a))])
+    union = sum([max(a[i], b[i]) for i in range(len(a))])
+    return (1+intersect)/(1+union)
     # return jaccard_similarity_score(a, b)  # original jaccard
-    return cosine_similarity([a], [b])[0][0]
+    # return cosine_similarity([a], [b])[0][0]
 
 
 def score_calculate(a, b, weight, half_weight_frequency):
     field_score = field_similarity(a, b, weight)
     detail_score = detail_similarity(a['detail'], b['detail'])
-    length_weight = 1 / (1 + log(1 + (a['detail_length'] + b['detail_length']) / 2, half_weight_frequency + 1))
+    length_weight = 1 / (1 + log(1 + (sum(a['detail']) + sum(b['detail'])) / 2, half_weight_frequency + 1))
     return (length_weight * field_score) + ((1 - length_weight) * detail_score)
