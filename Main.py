@@ -14,6 +14,41 @@ from operator import itemgetter
 from collections import defaultdict
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from time import time
+import pandas
+import pickle
+
+
+def cal_results(df, sd, md, wd):
+    prefix = {"sd": "str_", "md": "med_", "wd": "weak_"}
+
+    for i, row in enumerate(sd):
+        group_id = '{}{}'.format(prefix["sd"], i)
+        df.loc[row[0]]['is_core_row'] = 1
+        for item in row:
+            df.loc[item]['s_group_id'] = group_id
+
+    for i, row in enumerate(md):
+        group_id = '{}{}'.format(prefix["md"], i)
+        df.loc[row[0]]['is_core_row'] = 1
+        for item in row:
+            df.loc[item]['m_group_id'] = group_id
+
+    for i, row in enumerate(wd):
+        group_id = '{}{}'.format(prefix["wd"], i)
+        df.loc[row[0]]['is_core_row'] = 1
+        for item in row[:2]:
+            df.loc[item]['w_group_id'] = group_id
+
+    return df
+
+
+def write_results_pickle(data):
+    with open('results.pkl', 'wb') as f:
+        pickle.dump(data, f)
+
+def write_results_csv(data):
+    data.to_csv('results.csv')
+
 
 if __name__ == "__main__":
     print("-- Query --")
@@ -22,6 +57,13 @@ if __name__ == "__main__":
     # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
     # rows = QF.query(query_command)
     rows = QF.read_json_file("./src/condo_listings_dup.json")
+    # Start Construct results variable
+    df = pandas.DataFrame(rows)
+    df.set_index('id', inplace=True)
+    results = pandas.DataFrame(columns=['id', 's_group_id', 'm_group_id', 'w_group_id', 'is_core_row'])
+    results['id'] = df.index.values
+    results.set_index('id', inplace=True)
+    # End Construct results variable
     b = time()
     print('query time:',b-a,'s')
     filter_rows = []
@@ -47,7 +89,7 @@ if __name__ == "__main__":
         if ext['price'] is not None and ext['price'] != row['price']:
             not_match_row.append(row)
             continue
-        if ext['size'] is not None and ext['size'][0] != '.' and ext['size'][-1] != '.' and float(ext['size']) != row['size']:
+        if ext['size'] is not None and ext['size'] != row['size']:
             not_match_row.append(row)
             continue
         if ext['tower'] is not None and ext['tower'] != row['tower']:
@@ -116,6 +158,9 @@ if __name__ == "__main__":
     strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
     medium_duplicate = tuple(tuple([k] + v) for md in medium_duplicate for k, v in md.items())
     weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
+    results = cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
+    write_results_pickle(results)
+    write_results_csv(results)
     e = time()
     print('tokenize time:',all_tokenize_time,'s')
     print('calculate score time:',all_calculate_time,'s')
