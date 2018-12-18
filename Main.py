@@ -13,13 +13,55 @@ from pythainlp.tokenize import word_tokenize
 from operator import itemgetter
 from collections import Counter, defaultdict
 # from time import time
+import pandas
+import pickle
+
+def cal_results(df, sd, md, wd):
+    prefix = {"sd": "str_", "md": "med_", "wd": "weak_"}
+    type_str = {"sd": "strong", "md": "medium", "wd": "weak"}
+
+    for i, row in enumerate(sd):
+        group_id = '{}{}'.format(prefix["sd"], i)
+        for item in row:
+            df.loc[item]['dup_type'] = type_str["sd"]
+            df.loc[item]['dup_group_id'] = group_id
+
+    for i, row in enumerate(md):
+        group_id = '{}{}'.format(prefix["md"], i)
+        for item in row:
+            df.loc[item]['dup_type'] = type_str["md"]
+            df.loc[item]['dup_group_id'] = group_id
+
+    for i, row in enumerate(wd):
+        group_id = '{}{}'.format(prefix["wd"], i)
+        for item in row[:2]:
+            df.loc[item]['dup_type'] = type_str["wd"]
+            df.loc[item]['dup_group_id'] = group_id
+
+    return df
+
+def write_results_pickle(data):
+	with open('results.pkl', 'wb') as f:
+	    pickle.dump(data, f)
+
+def write_results_csv(data):
+    data.to_csv('results.csv')
 
 if __name__ == "__main__":
     print("-- Query --")
     # a = time()
     parameter = QF.read_json_file("parameter.json")
-    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
+    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC LIMIT 1500"
     rows = QF.query(query_command)
+
+    # Start Construct results variable
+    df = pandas.DataFrame(rows)
+    df.set_index('id', inplace=True)
+    results = pandas.DataFrame(columns=['id', 'dup_group_id', 'dup_type'])
+    results['id'] = df.index.values
+    results.set_index('id', inplace=True)
+    # End Construct results variable
+
     # rows = QF.read_json_file("./src/condo_listings_sample.json")
     # b = time()
     # print('query time:',b-a,'s')
@@ -117,6 +159,10 @@ if __name__ == "__main__":
     strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
     medium_duplicate = tuple(tuple(set([k] + v)) for md in medium_duplicate for k, v in md.items())
     weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
+
+    results = cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
+    write_results_pickle(results)
+    write_results_csv(results)
     # e = time()
     # print('tokenize time:',all_tokenize_time,'s')
     # print('calculate score time:',all_calculate_time,'s')
