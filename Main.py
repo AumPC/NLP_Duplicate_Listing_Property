@@ -18,9 +18,9 @@ if __name__ == "__main__":
     print("-- Query --")
     # a = time()
     parameter = QF.read_json_file("parameter.json")
-    # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
-    # rows = QF.query(query_command)
-    rows = QF.read_json_file("./src/condo_listings_sample.json")
+    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
+    rows = QF.query(query_command)
+    # rows = QF.read_json_file("./src/condo_listings_sample.json")
     # b = time()
     # print('query time:',b-a,'s')
     filter_rows = []
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         if ext['price'] is not None and ext['price'] != row['price']:
             not_match_row.append(row)
             continue
-        if ext['size'] is not None and ext['size'][0] != '.' and ext['size'][-1] != '.' and float(ext['size']) != row['size']:
+        if ext['size'] is not None and ext['size'] != row['size']:
             not_match_row.append(row)
             continue
         if ext['tower'] is not None and ext['tower'] != row['tower']:

@@ -20,7 +20,7 @@ def extraction_price_before(detail, keyword):
             value = float(ext_str) if ext_str != "" else None
             if not value or not (1000 < value < 1000000):
                 continue
-            ext_price_arr.append(value)
+            ext_price_arr.append(float(value))
     return ext_price_arr
 
 
@@ -44,7 +44,7 @@ def extraction_price_after(detail, keyword):
             value = float(ext_str) if ext_str != "" else None
             if not value or not (1000 < value < 1000000):
                 continue
-            ext_price_arr.append(value)
+            ext_price_arr.append(float(value))
     return ext_price_arr
 
 
@@ -70,7 +70,7 @@ def extraction_size_before(detail, keyword):
                 if point < 0:
                     break
             ext_size_arr += re.split('[ /,]', size[i][point+1:])
-    ext_size_arr = [ext_size for ext_size in ext_size_arr if ext_size]
+    ext_size_arr = [float(ext_size) for ext_size in ext_size_arr if ext_size and ext_size[0] != '.' and ext_size[-1] != '.' ]
     return ext_size_arr
 
 
@@ -87,7 +87,7 @@ def extraction_size_after(detail, keyword):
                 if point >= len(size[i+1]):
                     break
             ext_size_arr += re.split('[ /,]', size[i+1][0:point])
-    ext_size_arr = [ext_size for ext_size in ext_size_arr if ext_size]
+    ext_size_arr = [float(ext_size) for ext_size in ext_size_arr if ext_size and ext_size[0] != '.' and ext_size[-1] != '.' ]
     return ext_size_arr
 
 
@@ -101,7 +101,10 @@ def extraction_size(detail):
         'SQM.', 'SQm.', 'SqM.', 'Sqm.', 'sQM.', 'sQm.', 'sqM.', 'sqm.',
         'sqm,'
     ]
-    postfix_keyword = ['ขนาด', 'พื้นที่', 'sq.m.):']
+    postfix_keyword = [
+        # 'ขนาด', 
+        # 'พื้นที่', 
+        'sq.m.):']
     ext_size = list(set(extraction_size_before(detail, prefix_keyword) + extraction_size_after(detail, postfix_keyword)))
     if len(ext_size) > 1:
         return -1
