@@ -4,12 +4,15 @@ from difflib import SequenceMatcher
 from distance import jaccard, sorensen
 from similarity.metric_lcs import MetricLCS
 from similarity.ngram import NGram
+from sklearn.metrics import jaccard_similarity_score
+from sklearn.metrics.pairwise import cosine_similarity
 from math import log
 # pip install python-Levenshtein
 # pip install numpy
 # pip install pyxDamerauLevenshtein
 # pip install Distance
 # pip install strsim
+# pip install sklearn
 
 
 def sampling(text, rate):
@@ -57,9 +60,11 @@ def field_similarity(a, b, weight):
 
 
 def detail_similarity(a, b):
-    intersect = sum([min(a[word], b[word]) for word in set(a.keys()).intersection(set(b.keys()))])
-    union = sum([max(a.get(word,0), b.get(word,0)) for word in set(a.keys()).union(set(b.keys()))])
-    return (1+intersect)/(1+union)
+    # intersect = sum([min(a[i], b[i]) for i in range(len(a))])
+    # union = sum([max(a[i], b[i]) for i in range(len(a))])
+    # return (1+intersect)/(1+union)
+    # return jaccard_similarity_score(a, b)  # original jaccard
+    return cosine_similarity([a], [b])[0][0]
 
 
 def score_calculate(a, b, weight, half_weight_frequency):

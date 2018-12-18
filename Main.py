@@ -4,6 +4,7 @@
 # pip install pyxDamerauLevenshtein
 # pip install Distance
 # pip install strsim
+# pip install sklearn
 import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
@@ -12,6 +13,7 @@ from pythainlp.tokenize import word_tokenize
 # from pythainlp.ner import thainer
 from operator import itemgetter
 from collections import Counter, defaultdict
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 # from time import time
 
 if __name__ == "__main__":
@@ -20,7 +22,7 @@ if __name__ == "__main__":
     parameter = QF.read_json_file("parameter.json")
     # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
     # rows = QF.query(query_command)
-    rows = QF.read_json_file("./src/condo_listings_sample.json")
+    rows = QF.read_json_file("./src/condo_listings_dup.json")
     # b = time()
     # print('query time:',b-a,'s')
     filter_rows = []
@@ -83,18 +85,21 @@ if __name__ == "__main__":
     weak_duplicate = []
     # all_tokenize_time = all_calculate_time = all_group_time = 0
     for group in rows_group:
-        tokenize_time = calculate_time = 0
+        # calculate_time = 0
         strong_duplicate.append(defaultdict(list))
         medium_duplicate.append([])
         calculated_docs = []
+        # aa = time()
         for doc in rows_group[group]:
             doc['detail_length'] = len(doc['detail']) + len(doc['title'])
             doc['detail'] = doc['title'] + Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
-            # aa = time()
-            doc['detail'] = {k: v for k, v in Counter(word_tokenize(doc['detail'], engine='newmm')).items() if
-                             not (k.isspace() or k.replace('.', '', 1).isdecimal())}
-            # bb = time()
-            # tokenize_time += bb - aa
+        corpus = CountVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
+        # corpus = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
+        for i in range(len(rows_group[group])):
+            rows_group[group][i]['detail'] = corpus[i]
+        # bb = time()
+        # all_tokenize_time += bb - aa
+        for doc in rows_group[group]:
             most_confidence, most_duplicate_doc = 0, ''
             for calculated_doc in calculated_docs:
                 confidence = Sim.score_calculate(doc, calculated_doc, parameter['weight'], parameter['half_weight_frequency'])
@@ -111,7 +116,6 @@ if __name__ == "__main__":
                     weak_duplicate.append((doc['id'], most_duplicate_doc, most_confidence))
             # calculate_time += time() - bb
         medium_duplicate[-1], group_time = FG.group_find(strong_duplicate[-1], medium_duplicate[-1])
-        # all_tokenize_time += tokenize_time
         # all_calculate_time += calculate_time
         # all_group_time += group_time
     strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
