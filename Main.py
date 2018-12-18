@@ -66,9 +66,6 @@ if __name__ == "__main__":
     #     if ext['floor'] is not None and ext['floor'] != row['floor']:
     #         # field not match
     #         continue
-    #     if ext['type'] is not None and ext['type'] != row['type']:
-    #         # field not match
-    #         continue
         row['ext'] = ext
         filter_rows.append(row)
     print("Not Found Context", not_found)

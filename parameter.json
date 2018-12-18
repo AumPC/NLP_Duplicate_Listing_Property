@@ -4,7 +4,8 @@
     "size": 0.2,
     "tower": 0.2,
     "floor": 0.2,
-    "type": 0.2
+    "bedroom": 0.1,
+    "bathroom": 0.1
   },
   "sampling_rate": 0.1,
   "half_weight_frequency": 9,

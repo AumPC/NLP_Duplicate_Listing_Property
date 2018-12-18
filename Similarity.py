@@ -55,8 +55,9 @@ def field_similarity(a, b, weight):
     size_score = weight['size'] * different_numerical(a['size'], b['size'])
     tower_score = weight['tower'] * different_character(a['tower'], b['tower'])
     floor_score = weight['floor'] * different_character(a['floor'], b['floor'])
-    type_score = weight['type'] * different_character(a['type'], b['type'])
-    return price_score + size_score + tower_score + floor_score + type_score
+    bedroom_score = weight['bedroom'] * different_character(a['bedroom'], b['bedroom'])
+    bathroom_score = weight['bathroom'] * different_character(a['bathroom'], b['bathroom'])
+    return price_score + size_score + tower_score + floor_score + bedroom_score + bathroom_score
 
 
 def detail_similarity(a, b):
