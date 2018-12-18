@@ -1,8 +1,10 @@
 from collections import defaultdict
+from copy import deepcopy
 from time import time
 
+
 def group_find(group, score):
-    expand_group = defaultdict(list, group)
+    expand_group = defaultdict(list, deepcopy(group))
     start = time()
     ans = {i: i for i in {s[0] for s in score}.union({s[1] for s in score})}
     for i in score:
@@ -14,8 +16,11 @@ def group_find(group, score):
     for i in ans:
         while ans[i] != ans[ans[i]]:
             ans[i] = ans[ans[i]]
+        if i == ans[i]:
+            continue
         expand_group[ans[i]].append(i)
     return expand_group, time()-start
+
 
 if __name__ == '__main__':
     test_score = [[1, 2, 0.6],

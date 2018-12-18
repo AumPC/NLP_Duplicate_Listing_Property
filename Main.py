@@ -95,7 +95,7 @@ if __name__ == "__main__":
         bb = time()
         all_tokenize_time += bb - aa
         for doc in rows_group[group]:
-            most_confidence, most_duplicate_doc = 0, ''
+            most_confidence, most_duplicate_doc = -1, ''
             for calculated_doc in calculated_docs:
                 confidence = Sim.score_calculate(doc, calculated_doc, parameter['weight'], parameter['half_weight_frequency'])
                 if confidence > most_confidence:
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         all_calculate_time += calculate_time
         all_group_time += group_time
     strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
-    medium_duplicate = tuple(tuple(set([k] + v)) for md in medium_duplicate for k, v in md.items())
+    medium_duplicate = tuple(tuple([k] + v) for md in medium_duplicate for k, v in md.items())
     weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
     e = time()
     print('tokenize time:',all_tokenize_time,'s')
@@ -122,10 +122,14 @@ if __name__ == "__main__":
     print('group time:',all_group_time,'s')
     print('total scoring time:',e-d,'s')
     print(len(strong_duplicate), 'strong-duplicate groups')
+    post_strong = sum([len(dup) for dup in strong_duplicate])
+    print(post_strong, 'strong-duplicate posts')
     for i in range(3):
         print(strong_duplicate[i])
     print('...')
     print(len(medium_duplicate), 'medium-duplicate groups')
+    post_medium = sum([len(dup) for dup in medium_duplicate])
+    print(post_medium, 'medium-duplicate posts')
     len_of_print = 3 if len(medium_duplicate) > 2 else len(medium_duplicate)
     for i in range(len_of_print):
         print(medium_duplicate[i])
@@ -135,5 +139,5 @@ if __name__ == "__main__":
     for i in range(len_of_print):
         print(weak_duplicate[i])
     print('...')
-    print('found',len(rows)-(len(multiple_row)+len(not_match_row)+len(strong_duplicate)+len(medium_duplicate)+len(weak_duplicate)),'non-duplicate rows')
+    print('found',len(rows)-(len(multiple_row)+len(not_match_row)+post_medium+len(weak_duplicate)),'non-duplicate rows')
     print('total time:',e-a,'s')
