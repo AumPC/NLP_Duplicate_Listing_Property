@@ -1,5 +1,15 @@
-from Levenshtein import distance
+from Levenshtein import distance, jaro, jaro_winkler, ratio
+from pyxdameraulevenshtein import normalized_damerau_levenshtein_distance
+from difflib import SequenceMatcher
+from distance import jaccard, sorensen
+from similarity.metric_lcs import MetricLCS
+from similarity.ngram import NGram
 from math import log
+# pip install python-Levenshtein
+# pip install numpy
+# pip install pyxDamerauLevenshtein
+# pip install Distance
+# pip install strsim
 
 
 def sampling(text, rate):
@@ -17,9 +27,17 @@ def different_numerical(a, b):
 
 
 def different_character(a, b):
-    # pip install python-Levenshtein
     try:
         return 1 - (distance(a, b) / max(len(a), len(b)))
+        # return jaro(a, b)
+        # return jaro_winkler(a, b)
+        # return ratio(a, b)
+        # return 1 - normalized_damerau_levenshtein_distance(a, b)
+        # return SequenceMatcher(None, a, b).ratio()  # VERY SLOW ! BE CAREFUL !
+        # return 1 - jaccard(a, b)
+        # return 1 - sorensen(a, b)
+        # return 1 - MetricLCS().distance(a, b)
+        # return 1 - NGram(2).distance(a, b)
     except TypeError:
         return int(a is b)
     except ZeroDivisionError:
