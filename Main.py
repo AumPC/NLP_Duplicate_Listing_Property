@@ -52,9 +52,9 @@ def write_results_csv(data):
 if __name__ == "__main__":
     print("-- Query --")
     parameter = QF.read_json_file("parameter.json")
-    # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
-    # rows = QF.query(query_command)
-    rows = QF.read_json_file("./src/condo_listings_dup.json")
+    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
+    rows = QF.query(query_command)
+    # rows = QF.read_json_file("./src/condo_listings_dup.json")
     # Start Construct results variable
     df = pandas.DataFrame(rows)
     df.set_index('id', inplace=True)

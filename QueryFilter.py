@@ -47,7 +47,13 @@ def normalize_space(detail):
     return detail
 
 def clear_tag(detail):
-    detail = re.sub('<.*?>|&nbsp;|&gt;|&lt;|==|\*\*|---|\\\\|//', ' ', detail)
+    detail = re.sub('<.*?>|&nbsp;|&gt;|&lt;|==|\*\*', ' ', detail)
+    detail = re.sub('\t|=[=]+|:[:]+|/[/]+|\\[\\]+|-[-]+', '', detail)
+    detail = re.sub('[ ]+', ' ', detail)
+    detail = detail.split('\r\n')
+    for index in range(len(detail)):
+        detail[index] = re.sub('^[-\*#= ]+|[\*]$', '', detail[index])
+    detail = '\r\n'.join(detail)
     return detail
 
 def filter_special_character(detail):
