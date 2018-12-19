@@ -1,14 +1,14 @@
 {
   "weight": {
-    "price": 0.4,
+    "price": 0.35,
     "size": 0.1,
-    "tower": 0.15,
-    "floor": 0.2,
-    "type": 0.15
+    "tower": 0.1,
+    "floor": 0.35,
+    "type": 0.1
   },
-  "sampling_rate": 0.7,
-  "most_frequency_word": 25,
-  "min_confidence": 0.75,
-  "hard_threshold": 0.9,
-  "soft_threshold": 0.78
+  "sampling_rate": 0.5,
+  "half_weight_frequency": 9,
+  "min_confidence": 0.79,
+  "hard_threshold": 0.94,
+  "soft_threshold": 0.86
 }

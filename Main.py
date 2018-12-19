@@ -1,5 +1,9 @@
 # pip install pythainlp
 # pip install python-Levenshtein
+# pip install numpy
+# pip install pyxDamerauLevenshtein
+# pip install Distance
+# pip install strsim
 import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
@@ -9,34 +13,89 @@ from pythainlp.tokenize import word_tokenize
 from operator import itemgetter
 from collections import Counter, defaultdict
 # from time import time
+import pandas
+import pickle
+
+def cal_results(df, sd, md, wd):
+    prefix = {"sd": "str_", "md": "med_", "wd": "weak_"}
+
+    for i, row in enumerate(sd):
+        group_id = '{}{}'.format(prefix["sd"], i)
+        df.loc[row[0]]['is_core_row'] = 1
+        for item in row:
+            df.loc[item]['s_group_id'] = group_id
+
+    for i, row in enumerate(md):
+        group_id = '{}{}'.format(prefix["md"], i)
+        df.loc[row[0]]['is_core_row'] = 1
+        for item in row:
+            df.loc[item]['m_group_id'] = group_id
+
+    for i, row in enumerate(wd):
+        group_id = '{}{}'.format(prefix["wd"], i)
+        df.loc[row[0]]['is_core_row'] = 1
+        for item in row[:2]:
+            df.loc[item]['w_group_id'] = group_id
+
+    return df
+
+def write_results_pickle(data):
+	with open('results.pkl', 'wb') as f:
+	    pickle.dump(data, f)
+
+def write_results_csv(data):
+    data.to_csv('results.csv')
 
 if __name__ == "__main__":
     print("-- Query --")
     # a = time()
     parameter = QF.read_json_file("parameter.json")
-    # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100"
-    # rows = QF.query(query_command)
-    rows = QF.read_json_file("./src/condo_listings_sample.json")
+    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
+    rows = QF.query(query_command)
+
+    # Start Construct results variable
+    df = pandas.DataFrame(rows)
+    df.set_index('id', inplace=True)
+    results = pandas.DataFrame(columns=['id', 's_group_id', 'm_group_id', 'w_group_id', 'is_core_row'])
+    results['id'] = df.index.values
+    results.set_index('id', inplace=True)
+    # End Construct results variable
+
+    # rows = QF.read_json_file("./src/condo_listings_sample.json")
     # b = time()
-    print('query time:',b-a,'s')
+    # print('query time:',b-a,'s')
     filter_rows = []
     multiple_row = []
     not_match_row = []
+    not_found = {'price': 0, 'size': 0, 'tower': 0, 'bedroom': 0, 'bathroom': 0}
     print("-- Extraction & Filter --")
     for row in rows:
         ext = Extr.extraction(row['detail'])
         if ext == -1:
             multiple_row.append(row)
-            continue 
-        if ext['price'] != [None, None] and ext['price'] != row['price']:
+            continue
+        if ext['price'] is None:
+            not_found['price'] += 1
+        if ext['size'] is None:
+            not_found['size'] += 1
+        if ext['tower'] is None:
+            not_found['tower'] += 1
+        if ext['bedroom'] is None:
+            not_found['bedroom'] += 1
+        if ext['bathroom'] is None:
+            not_found['bathroom'] += 1
+        if ext['price'] is not None and ext['price'] != row['price']:
             not_match_row.append(row)
             continue
-        if ext['size'] is not None and ext['size'][0] != '.' and ext['size'][-1] != '.' and float(ext['size']) != row['size']:
+        if ext['size'] is not None and ext['size'] != row['size']:
             not_match_row.append(row)
             continue
         if ext['tower'] is not None and ext['tower'] != row['tower']:
-            not_match_row.append(row)
-            continue
+            if row['tower'] == '':
+                row['tower'] = ext['tower']
+            else:
+                not_match_row.append(row)
+                continue
         if ext['bedroom'] is not None and ext['bedroom'] != row['bedroom']:
             not_match_row.append(row)
             continue
@@ -51,19 +110,19 @@ if __name__ == "__main__":
     #         continue
         row['ext'] = ext
         filter_rows.append(row)
-
-    print("Multiple Context",len(multiple_row),'items')
-    print("Not Match Context",len(not_match_row),'items')
+    print("Not Found Context", not_found)
+    print("Multiple Context", len(multiple_row), 'items')
+    print("Not Match Context", len(not_match_row), 'items')
     # c = time()
-    print('extraction time:',c-b,'s')
+    # print('extraction time:',c-b,'s')
     rows_group = QF.filter(filter_rows)
     # d = time()
-    print('filter time:',d-c,'s')
+    # print('filter time:',d-c,'s')
     print("-- Scoring --")
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
-    all_tokenize_time = all_calculate_time = all_group_time = 0
+    # all_tokenize_time = all_calculate_time = all_group_time = 0
     for group in rows_group:
         tokenize_time = calculate_time = 0
         strong_duplicate.append(defaultdict(list))
@@ -73,9 +132,8 @@ if __name__ == "__main__":
             doc['detail_length'] = len(doc['detail']) + len(doc['title'])
             doc['detail'] = doc['title'] + Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
             # aa = time()
-            word_list = {k: v for k, v in Counter(word_tokenize(doc['detail'], engine='newmm')).items() if
-                         not (k.isspace() or k.replace('.', '', 1).isdecimal())}
-            doc['detail'] = dict(Counter(word_list).most_common(parameter['most_frequency_word']))
+            doc['detail'] = {k: v for k, v in Counter(word_tokenize(doc['detail'], engine='newmm')).items() if
+                             not (k.isspace() or k.replace('.', '', 1).isdecimal())}
             # bb = time()
             # tokenize_time += bb - aa
             most_confidence, most_duplicate_doc = 0, ''
@@ -94,12 +152,16 @@ if __name__ == "__main__":
                     weak_duplicate.append((doc['id'], most_duplicate_doc, most_confidence))
             # calculate_time += time() - bb
         medium_duplicate[-1], group_time = FG.group_find(strong_duplicate[-1], medium_duplicate[-1])
-        all_tokenize_time += tokenize_time
-        all_calculate_time += calculate_time
-        all_group_time += group_time
+        # all_tokenize_time += tokenize_time
+        # all_calculate_time += calculate_time
+        # all_group_time += group_time
     strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
     medium_duplicate = tuple(tuple(set([k] + v)) for md in medium_duplicate for k, v in md.items())
     weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
+
+    results = cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
+    write_results_pickle(results)
+    write_results_csv(results)
     # e = time()
     # print('tokenize time:',all_tokenize_time,'s')
     # print('calculate score time:',all_calculate_time,'s')

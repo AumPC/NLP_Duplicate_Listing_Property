@@ -1,5 +1,15 @@
-from Levenshtein import distance
+from Levenshtein import distance, jaro, jaro_winkler, ratio
+from pyxdameraulevenshtein import normalized_damerau_levenshtein_distance
+from difflib import SequenceMatcher
+from distance import jaccard, sorensen
+from similarity.metric_lcs import MetricLCS
+from similarity.ngram import NGram
 from math import log
+# pip install python-Levenshtein
+# pip install numpy
+# pip install pyxDamerauLevenshtein
+# pip install Distance
+# pip install strsim
 
 
 def sampling(text, rate):
@@ -17,9 +27,17 @@ def different_numerical(a, b):
 
 
 def different_character(a, b):
-    # pip install python-Levenshtein
     try:
         return 1 - (distance(a, b) / max(len(a), len(b)))
+        # return jaro(a, b)
+        # return jaro_winkler(a, b)
+        # return ratio(a, b)
+        # return 1 - normalized_damerau_levenshtein_distance(a, b)
+        # return SequenceMatcher(None, a, b).ratio()  # VERY SLOW ! BE CAREFUL !
+        # return 1 - jaccard(a, b)
+        # return 1 - sorensen(a, b)
+        # return 1 - MetricLCS().distance(a, b)
+        # return 1 - NGram(2).distance(a, b)
     except TypeError:
         return int(a is b)
     except ZeroDivisionError:
@@ -27,7 +45,10 @@ def different_character(a, b):
 
 
 def field_similarity(a, b, weight):
-    price_score = weight['price'] * different_numerical(a['price'][0], b['price'][0])
+    try:
+        price_score = weight['price'] * different_numerical(a['price'][0], b['price'][0])
+    except TypeError:
+        price_score = weight['price'] * int(a['price'] is b['price'])
     size_score = weight['size'] * different_numerical(a['size'], b['size'])
     tower_score = weight['tower'] * different_character(a['tower'], b['tower'])
     floor_score = weight['floor'] * different_character(a['floor'], b['floor'])
@@ -36,10 +57,8 @@ def field_similarity(a, b, weight):
 
 
 def detail_similarity(a, b):
-    # size_a = sum(a.values())
-    # size_b = sum(b.values())
     intersect = sum([min(a[word], b[word]) for word in set(a.keys()).intersection(set(b.keys()))])
-    union = sum([max(a[word], b[word]) for word in set(a.keys()).union(set(b.keys()))])
+    union = sum([max(a.get(word,0), b.get(word,0)) for word in set(a.keys()).union(set(b.keys()))])
     return (1+intersect)/(1+union)
 
 

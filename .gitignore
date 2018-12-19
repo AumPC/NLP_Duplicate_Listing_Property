@@ -2,3 +2,5 @@
 /password_db.txt
 /src
 /.idea
+.vscode
+results*
