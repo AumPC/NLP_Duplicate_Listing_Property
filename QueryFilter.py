@@ -30,7 +30,6 @@ def query(query_command):
         condo['size'] = float(row['room_information']['room_area'])
         condo['tower'] = row['room_information']['building']
         condo['floor'] = row['room_information']['on_floor']
-        condo['type'] = row['room_information']['room_type']
         condo['bedroom'] = row['room_information']['no_of_bed']
         condo['bathroom'] = row['room_information']['no_of_bath']
         condo['detail'] = normalize_space(filter_special_character(clear_tag(row['detail'])))

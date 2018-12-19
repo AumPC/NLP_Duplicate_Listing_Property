@@ -171,7 +171,7 @@ def extraction(detail):
     # which field can't extract, return None
     # filter multiple value
 
-    ext = {'price': None, 'size': None, 'tower': None, 'floor': None, 'type': None, 'bedroom': None, 'bathroom': None}
+    ext = {'price': None, 'size': None, 'tower': None, 'floor': None, 'bedroom': None, 'bathroom': None}
     if not detail:
         return ext
     ext['price'] = extraction_price(detail)

@@ -1,16 +1,10 @@
 from Levenshtein import distance, jaro, jaro_winkler, ratio
-from pyxdameraulevenshtein import normalized_damerau_levenshtein_distance
-from difflib import SequenceMatcher
 from distance import jaccard, sorensen
 from similarity.metric_lcs import MetricLCS
 from similarity.ngram import NGram
+from sklearn.metrics import jaccard_similarity_score
+from sklearn.metrics.pairwise import cosine_similarity
 from math import log
-# pip install python-Levenshtein
-# pip install numpy
-# pip install pyxDamerauLevenshtein
-# pip install Distance
-# pip install strsim
-
 
 def sampling(text, rate):
     width = rate*len(text)/10
@@ -29,15 +23,6 @@ def different_numerical(a, b):
 def different_character(a, b):
     try:
         return 1 - (distance(a, b) / max(len(a), len(b)))
-        # return jaro(a, b)
-        # return jaro_winkler(a, b)
-        # return ratio(a, b)
-        # return 1 - normalized_damerau_levenshtein_distance(a, b)
-        # return SequenceMatcher(None, a, b).ratio()  # VERY SLOW ! BE CAREFUL !
-        # return 1 - jaccard(a, b)
-        # return 1 - sorensen(a, b)
-        # return 1 - MetricLCS().distance(a, b)
-        # return 1 - NGram(2).distance(a, b)
     except TypeError:
         return int(a is b)
     except ZeroDivisionError:
@@ -52,18 +37,21 @@ def field_similarity(a, b, weight):
     size_score = weight['size'] * different_numerical(a['size'], b['size'])
     tower_score = weight['tower'] * different_character(a['tower'], b['tower'])
     floor_score = weight['floor'] * different_character(a['floor'], b['floor'])
-    type_score = weight['type'] * different_character(a['type'], b['type'])
-    return price_score + size_score + tower_score + floor_score + type_score
+    bedroom_score = weight['bedroom'] * different_character(a['bedroom'], b['bedroom'])
+    bathroom_score = weight['bathroom'] * different_character(a['bathroom'], b['bathroom'])
+    return price_score + size_score + tower_score + floor_score + bedroom_score + bathroom_score
 
 
 def detail_similarity(a, b):
-    intersect = sum([min(a[word], b[word]) for word in set(a.keys()).intersection(set(b.keys()))])
-    union = sum([max(a.get(word,0), b.get(word,0)) for word in set(a.keys()).union(set(b.keys()))])
-    return (1+intersect)/(1+union)
+    intersect = sum([min(a[i], b[i]) for i in range(len(a))])
+    union = sum([max(a[i], b[i]) for i in range(len(a))])
+    # return (1+intersect)/(1+union)
+    # return jaccard_similarity_score(a, b)  # original jaccard
+    return cosine_similarity([a], [b])[0][0]
 
 
 def score_calculate(a, b, weight, half_weight_frequency):
     field_score = field_similarity(a, b, weight)
     detail_score = detail_similarity(a['detail'], b['detail'])
-    length_weight = 1 / (1 + log(1 + (a['detail_length'] + b['detail_length']) / 2, half_weight_frequency + 1))
+    length_weight = 1 / (1 + log(1 + (sum(a['detail']) + sum(b['detail'])) / 2, half_weight_frequency + 1))
     return (length_weight * field_score) + ((1 - length_weight) * detail_score)
