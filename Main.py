@@ -64,8 +64,9 @@ if __name__ == "__main__":
     # End Construct results variable
     filter_rows = []
     multiple_row = []
+    check_floor_row = []
     not_match_row = []
-    not_found = {'price': 0, 'size': 0, 'tower': 0, 'bedroom': 0, 'bathroom': 0}
+    not_found = {'price': 0, 'size': 0, 'tower': 0, 'bedroom': 0, 'bathroom': 0, 'floor' : 0}
     print("-- Extraction & Filter --")
     for row in rows:
         ext = Extr.extraction(row['detail'])
@@ -82,6 +83,8 @@ if __name__ == "__main__":
             not_found['bedroom'] += 1
         if ext['bathroom'] is None:
             not_found['bathroom'] += 1
+        if ext['floor'] is None:
+            not_found['floor'] += 1
         if ext['price'] is not None and ext['price'] != row['price']:
             not_match_row.append(row)
             continue
@@ -100,13 +103,19 @@ if __name__ == "__main__":
         if ext['bathroom'] is not None and ext['bathroom'] != row['bathroom']:
             not_match_row.append(row)
             continue
-    #     if ext['floor'] is not None and ext['floor'] != row['floor']:
-    #         # field not match
-    #         continue
+        if ext['floor'] is not None and ext['floor'] != row['floor']:
+            if ext['floor'] == -1:
+                check_floor_row.append(row['id'])
+                ext['floor'] = None
+                not_found['floor'] += 1
+            else:
+                not_match_row.append(row)
+                continue
         row['ext'] = ext
         filter_rows.append(row)
     print("Not Found Context", not_found)
     print("Multiple Context", len(multiple_row), 'items')
+    print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
     print("Not Match Context", len(not_match_row), 'items')
     rows_group = QF.filter(filter_rows)
     print("-- Scoring --")
