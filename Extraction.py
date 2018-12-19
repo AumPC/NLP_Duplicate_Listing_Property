@@ -172,6 +172,8 @@ def extraction_floor_before(floor, ext_floor):
         return -1
     for i in range(len(floor)-1):
         point = 0
+        if floor[i+1] == '':
+            continue
         while floor[i+1][point] in ' 0123456789':
             point += 1
             if point >= len(floor[i+1]):

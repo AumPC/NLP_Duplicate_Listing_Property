@@ -5,12 +5,6 @@ from similarity.ngram import NGram
 from sklearn.metrics import jaccard_similarity_score
 from sklearn.metrics.pairwise import cosine_similarity
 from math import log
-# pip install python-Levenshtein
-# pip install numpy
-# pip install Distance
-# pip install strsim
-# pip install sklearn
-
 
 def sampling(text, rate):
     width = rate*len(text)/10
@@ -29,13 +23,6 @@ def different_numerical(a, b):
 def different_character(a, b):
     try:
         return 1 - (distance(a, b) / max(len(a), len(b)))
-        # return jaro(a, b)
-        # return jaro_winkler(a, b)
-        # return ratio(a, b)
-        # return 1 - jaccard(a, b)
-        # return 1 - sorensen(a, b)
-        # return 1 - MetricLCS().distance(a, b)
-        # return 1 - NGram(2).distance(a, b)
     except TypeError:
         return int(a is b)
     except ZeroDivisionError:
@@ -58,9 +45,9 @@ def field_similarity(a, b, weight):
 def detail_similarity(a, b):
     intersect = sum([min(a[i], b[i]) for i in range(len(a))])
     union = sum([max(a[i], b[i]) for i in range(len(a))])
-    return (1+intersect)/(1+union)
+    # return (1+intersect)/(1+union)
     # return jaccard_similarity_score(a, b)  # original jaccard
-    # return cosine_similarity([a], [b])[0][0]
+    return cosine_similarity([a], [b])[0][0]
 
 
 def score_calculate(a, b, weight, half_weight_frequency):

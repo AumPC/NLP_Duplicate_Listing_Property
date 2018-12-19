@@ -1,15 +1,8 @@
-# pip install pythainlp
-# pip install python-Levenshtein
-# pip install numpy
-# pip install Distance
-# pip install strsim
-# pip install sklearn
 import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
 import FindGroup as FG
 from pythainlp.tokenize import word_tokenize
-# from pythainlp.ner import thainer
 from operator import itemgetter
 from collections import defaultdict
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
@@ -115,7 +108,8 @@ if __name__ == "__main__":
         filter_rows.append(row)
     print("Not Found Context", not_found)
     print("Multiple Context", len(multiple_row), 'items')
-    print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
+    # print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
+    print("Floor Multiple Context", len(check_floor_row))
     print("Not Match Context", len(not_match_row), 'items')
     rows_group = QF.filter(filter_rows)
     print("-- Scoring --")

@@ -3,7 +3,6 @@ import json
 
 # export from database to JSON
 
-
 def save_to_file(data, filename):
     open_file = open(filename, 'w')
     json.dump(data, open_file, sort_keys=True, indent=4)
