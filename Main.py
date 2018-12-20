@@ -8,6 +8,7 @@ import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
 import FindGroup as FG
+from MyCache import create_pickle, load_pickle
 from pythainlp.tokenize import word_tokenize
 # from pythainlp.ner import thainer
 from operator import itemgetter
@@ -52,7 +53,7 @@ def write_results_csv(data):
 if __name__ == "__main__":
     print("-- Query --")
     parameter = QF.read_json_file("parameter.json")
-    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC LIMIT 500"
+    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
     rows = QF.query(query_command)
     # rows = QF.read_json_file("./src/condo_listings_dup.json")
     # Start Construct results variable
@@ -120,6 +121,22 @@ if __name__ == "__main__":
     print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
     print("Not Match Context", len(not_match_row), 'items')
     rows_group = QF.filter(filter_rows)
+
+    # Tokenize
+    try:
+        group_word_matrix = load_pickle('group_word_matrix')
+        print("Use cached \"group_word_matrix\"")
+    except:
+        print("Calculate \"group_word_matrix\"")
+        for group in rows_group:
+            project_id = rows_group[group][0]['project']
+            for doc in rows_group[group]:
+                doc['detail'] = doc['title'] + Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
+            # corpus = CountVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
+            matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
+            group_word_matrix[project_id] = matrix
+        create_pickle('group_word_matrix', group_word_matrix)
+
     print("-- Scoring --")
     strong_duplicate = []
     medium_duplicate = []
@@ -127,19 +144,13 @@ if __name__ == "__main__":
 
     for group in rows_group:
         project_id = rows_group[group][0]['project']
-        for doc in rows_group[group]:
-            doc['detail'] = doc['title'] + Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
-        # corpus = CountVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
-        matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
-        group_word_matrix[project_id] = matrix
-        for i in range(len(rows_group[group])):
-            rows_group[group][i]['detail'] = group_word_matrix[project_id][i]
-
-    for group in rows_group:
         strong_duplicate.append(defaultdict(list))
         medium_duplicate.append([])
         calculated_docs = []
-        
+
+        for i in range(len(rows_group[group])):
+            rows_group[group][i]['detail'] = group_word_matrix[project_id][i]
+
         for doc in rows_group[group]:
             most_confidence, most_duplicate_doc = -1, ''
             for calculated_doc in calculated_docs:

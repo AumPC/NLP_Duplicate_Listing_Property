@@ -1,8 +1,11 @@
 import pickle
+import os
 
 folder_name = "cached"
 
 def _create_path(filename):
+    if not os.path.exists(folder_name):
+        os.mkdir(folder_name)
     return '{}/{}.pkl'.format(folder_name, filename)
 
 def create_pickle(filename, data):
@@ -10,10 +13,10 @@ def create_pickle(filename, data):
     try:
         with open(path, 'wb') as f:
             pickle.dump(data, f)
+        print("Cached \"{}\"".format(filename))
     except:
         print("Error while create pickle")
-    finally:
-        f.close()
+        raise
 
 def load_pickle(filename):
     try:
@@ -22,7 +25,5 @@ def load_pickle(filename):
             data = pickle.load(f)
         return data
     except:
-        print("Data not found")
-        return None
-    finally:
-        f.close()
+        print("Data \"{}\" not found cached".format(filename))
+        raise
