@@ -1,9 +1,9 @@
 from Levenshtein import distance, jaro, jaro_winkler, ratio
-from distance import jaccard, sorensen
-from similarity.metric_lcs import MetricLCS
-from similarity.ngram import NGram
-from sklearn.metrics import jaccard_similarity_score
-from sklearn.metrics.pairwise import cosine_similarity
+# from distance import jaccard, sorensen
+# from similarity.metric_lcs import MetricLCS
+# from similarity.ngram import NGram
+# from sklearn.metrics import jaccard_similarity_score
+# from sklearn.metrics.pairwise import cosine_similarity
 from math import log
 # pip install python-Levenshtein
 # pip install numpy
