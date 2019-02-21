@@ -8,45 +8,12 @@ import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
 import FindGroup as FG
+import ReadWriteFile as RW
 from pythainlp.tokenize import word_tokenize
 # from pythainlp.ner import thainer
 from operator import itemgetter
 from collections import defaultdict
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-import pandas
-import pickle
-
-
-def cal_results(df, sd, md, wd):
-    prefix = {"sd": "str_", "md": "med_", "wd": "weak_"}
-
-    for i, row in enumerate(sd):
-        group_id = '{}{}'.format(prefix["sd"], i)
-        df.loc[row[0]]['is_core_row'] = 1
-        for item in row:
-            df.loc[item]['s_group_id'] = group_id
-
-    for i, row in enumerate(md):
-        group_id = '{}{}'.format(prefix["md"], i)
-        df.loc[row[0]]['is_core_row'] = 1
-        for item in row:
-            df.loc[item]['m_group_id'] = group_id
-
-    for i, row in enumerate(wd):
-        group_id = '{}{}'.format(prefix["wd"], i)
-        df.loc[row[0]]['is_core_row'] = 1
-        for item in row[:2]:
-            df.loc[item]['w_group_id'] = group_id
-
-    return df
-
-
-def write_results_pickle(data):
-    with open('results.pkl', 'wb') as f:
-        pickle.dump(data, f)
-
-def write_results_csv(data):
-    data.to_csv('results.csv')
 
 
 if __name__ == "__main__":
@@ -55,13 +22,6 @@ if __name__ == "__main__":
     # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
     # rows = QF.query(query_command)
     rows = QF.read_json_file("./src/condo_listings_dup.json")
-    # Start Construct results variable
-    df = pandas.DataFrame(rows)
-    df.set_index('id', inplace=True)
-    results = pandas.DataFrame(columns=['id', 's_group_id', 'm_group_id', 'w_group_id', 'is_core_row'])
-    results['id'] = df.index.values
-    results.set_index('id', inplace=True)
-    # End Construct results variable
     filter_rows = []
     multiple_row = []
     not_match_row = []
@@ -142,9 +102,6 @@ if __name__ == "__main__":
     strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
     medium_duplicate = tuple(tuple([k] + v) for md in medium_duplicate for k, v in md.items())
     weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
-    results = cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
-    write_results_pickle(results)
-    write_results_csv(results)
     print(len(strong_duplicate), 'strong-duplicate groups')
     for i in range(3):
         print(strong_duplicate[i])
@@ -159,3 +116,7 @@ if __name__ == "__main__":
     for i in range(len_of_print):
         print(weak_duplicate[i])
     print('...')
+    results = RW.construct_data_frame(rows)
+    results = RW.cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
+    RW.write_results_pickle(results)
+    RW.write_results_csv(results)
