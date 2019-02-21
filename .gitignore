@@ -1,7 +1,7 @@
 /__pycache__
 /password_db.txt
 /src
+/cached
 /.idea
 .vscode
 results*
-cached

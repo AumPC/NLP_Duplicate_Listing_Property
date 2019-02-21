@@ -1,9 +1,3 @@
-# pip install pythainlp
-# pip install python-Levenshtein
-# pip install numpy
-# pip install Distance
-# pip install strsim
-# pip install sklearn
 import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
@@ -11,18 +5,24 @@ import FindGroup as FG
 import MyCache as C
 import ReadWriteFile as RW
 from pythainlp.tokenize import word_tokenize
-# from pythainlp.ner import thainer
 from operator import itemgetter
 from collections import defaultdict
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+
+QUERY = False
+DEBUG = True
 
 
 if __name__ == "__main__":
-    print("-- Query --")
+    if DEBUG:
+        print("-- Query --")
     parameter = QF.read_json_file("parameter.json")
-    # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
-    # rows = QF.query(query_command)
-    rows = QF.read_json_file("./src/condo_listings_dup.json")
+    if QUERY:
+        query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
+        rows = QF.query(query_command)
+    else:
+        rows = QF.read_json_file("./src/condo_listings_dup.json")
     filter_rows = []
     multiple_row = []
     check_floor_row = []
@@ -30,7 +30,8 @@ if __name__ == "__main__":
     group_word_matrix = {}
     corpus = {}
     not_found = {'price': 0, 'size': 0, 'tower': 0, 'bedroom': 0, 'bathroom': 0, 'floor' : 0}
-    print("-- Extraction & Filter --")
+    if DEBUG:
+        print("-- Extraction & Filter --")
     for row in rows:
         ext = Extr.extraction(row['detail'])
         if ext == -1:
@@ -76,28 +77,31 @@ if __name__ == "__main__":
                 continue
         row['ext'] = ext
         filter_rows.append(row)
-    print("Not Found Context", not_found)
-    print("Multiple Context", len(multiple_row), 'items')
-    print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
-    print("Not Match Context", len(not_match_row), 'items')
+    if DEBUG:
+        print("Not Found Context", not_found)
+        print("Multiple Context", len(multiple_row), 'items')
+        print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
+        print("Not Match Context", len(not_match_row), 'items')
     rows_group = QF.filter(filter_rows)
 
     # Tokenize
     try:
         group_word_matrix = C.load_pickle('group_word_matrix')
-        print("Use cached \"group_word_matrix\"")
+        if DEBUG:
+            print("Use cached \"group_word_matrix\"")
     except:
-        print("Calculate \"group_word_matrix\"")
+        if DEBUG:
+            print("Calculate \"group_word_matrix\"")
         for group in rows_group:
             project_id = rows_group[group][0]['project']
             for doc in rows_group[group]:
                 doc['detail'] = doc['title'] + Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
-            # corpus = CountVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
             matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
             group_word_matrix[project_id] = matrix
         C.create_pickle('group_word_matrix', group_word_matrix)
 
-    print("-- Scoring --")
+    if DEBUG:
+        print("-- Scoring --")
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
@@ -130,20 +134,21 @@ if __name__ == "__main__":
     strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
     medium_duplicate = tuple(tuple([k] + v) for md in medium_duplicate for k, v in md.items())
     weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
-    print(len(strong_duplicate), 'strong-duplicate groups')
-    for i in range(3):
-        print(strong_duplicate[i])
-    print('...')
-    print(len(medium_duplicate), 'medium-duplicate groups')
-    len_of_print = 3 if len(medium_duplicate) > 2 else len(medium_duplicate)
-    for i in range(len_of_print):
-        print(medium_duplicate[i])
-    print('...')
-    print(len(weak_duplicate), 'weak-duplicate pairs')
-    len_of_print = 3 if len(weak_duplicate) > 2 else len(weak_duplicate)
-    for i in range(len_of_print):
-        print(weak_duplicate[i])
-    print('...')
+    if DEBUG:
+        print(len(strong_duplicate), 'strong-duplicate groups')
+        for i in range(3):
+            print(strong_duplicate[i])
+        print('...')
+        print(len(medium_duplicate), 'medium-duplicate groups')
+        len_of_print = 3 if len(medium_duplicate) > 2 else len(medium_duplicate)
+        for i in range(len_of_print):
+            print(medium_duplicate[i])
+        print('...')
+        print(len(weak_duplicate), 'weak-duplicate pairs')
+        len_of_print = 3 if len(weak_duplicate) > 2 else len(weak_duplicate)
+        for i in range(len_of_print):
+            print(weak_duplicate[i])
+        print('...')
     results = RW.construct_data_frame(rows)
     results = RW.cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
     RW.write_results_pickle(results)

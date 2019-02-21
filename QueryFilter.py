@@ -8,9 +8,6 @@ from string import ascii_letters, punctuation, digits, whitespace
 
 
 def query(query_command):
-    # connect to postgresql database using psycopg2
-    # in python3, do not pip psycopg2. please pip psycopg2-binary instead
-    # tip: use RealDictCursor to query object as dictionary
     file_object = open('./password_db.txt', 'r')
     conn = psycopg2.connect("dbname=Temp user=postgres password="+file_object.readline())
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
