@@ -8,11 +8,8 @@ import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
 import FindGroup as FG
-<<<<<<< HEAD
+import MyCache as C
 import ReadWriteFile as RW
-=======
-from MyCache import create_pickle, load_pickle
->>>>>>> master
 from pythainlp.tokenize import word_tokenize
 # from pythainlp.ner import thainer
 from operator import itemgetter
@@ -23,22 +20,9 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 if __name__ == "__main__":
     print("-- Query --")
     parameter = QF.read_json_file("parameter.json")
-<<<<<<< HEAD
     # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
     # rows = QF.query(query_command)
     rows = QF.read_json_file("./src/condo_listings_dup.json")
-=======
-    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
-    rows = QF.query(query_command)
-    # rows = QF.read_json_file("./src/condo_listings_dup.json")
-    # Start Construct results variable
-    df = pandas.DataFrame(rows)
-    df.set_index('id', inplace=True)
-    results = pandas.DataFrame(columns=['id', 's_group_id', 'm_group_id', 'w_group_id', 'is_core_row'])
-    results['id'] = df.index.values
-    results.set_index('id', inplace=True)
-    # End Construct results variable
->>>>>>> master
     filter_rows = []
     multiple_row = []
     check_floor_row = []
@@ -100,7 +84,7 @@ if __name__ == "__main__":
 
     # Tokenize
     try:
-        group_word_matrix = load_pickle('group_word_matrix')
+        group_word_matrix = C.load_pickle('group_word_matrix')
         print("Use cached \"group_word_matrix\"")
     except:
         print("Calculate \"group_word_matrix\"")
@@ -111,7 +95,7 @@ if __name__ == "__main__":
             # corpus = CountVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
             matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
             group_word_matrix[project_id] = matrix
-        create_pickle('group_word_matrix', group_word_matrix)
+        C.create_pickle('group_word_matrix', group_word_matrix)
 
     print("-- Scoring --")
     strong_duplicate = []
