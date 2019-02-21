@@ -102,8 +102,8 @@ def extraction_size(detail):
         'sqm,'
     ]
     postfix_keyword = [
-        # 'ขนาด', 
-        # 'พื้นที่', 
+        # 'ขนาด',
+        # 'พื้นที่',
         'sq.m.):']
     ext_size = list(set(extraction_size_before(detail, prefix_keyword) + extraction_size_after(detail, postfix_keyword)))
     if len(ext_size) > 1:
@@ -146,8 +146,13 @@ def extraction_tower(detail):
 
 def extraction_bed_bath(detail):
     patterns = ['([0-9, ]+)ห้องนอน([0-9, ]+)ห้องน้ำ', 'ห้องนอน([0-9, ]+)ห้องน้ำ([0-9, ]+)',
+<<<<<<< HEAD
                 '([0-9, ]+)นอน([0-9, ]+)น้ำ', 'นอน([0-9, ]+)น้ำ([0-9, ]+)', 
                 '([0-9, ]+)bedroom([0-9, ]+) bathroom', '([0-9, ]+)bed([0-9, ]+)bath']
+=======
+                '([0-9, ]+)นอน([0-9, ]+)น้ำ', 'นอน([0-9, ]+)น้ำ([0-9, ]+)',
+                '([0-9, ]+)bedroom([0-9, ]+) bathroom', '([0-9, ]+)bed([0-9, ]+)bath',]
+>>>>>>> master
     bedroom = set()
     bathroom = set()
     for p in patterns:
@@ -167,6 +172,40 @@ def extraction_bed_bath(detail):
     return bedroom, bathroom
 
 
+def extraction_floor_before(floor, ext_floor):
+    if ext_floor == -1:
+        return -1
+    for i in range(len(floor)-1):
+        point = 0
+        if floor[i+1] == '':
+            continue
+        while floor[i+1][point] in ' 0123456789':
+            point += 1
+            if point >= len(floor[i+1]):
+                break
+        ext_floor_arr = floor[i+1][0:point]
+        ext_floor_arr = re.split('[ /,]', ext_floor_arr)
+        for value in ext_floor_arr:
+            if value and ext_floor is None:
+                ext_floor = value
+            if value and ext_floor != value:
+                return -1
+    return ext_floor
+
+def extraction_floor(detail):
+    ext_floor = None
+    all_floor = detail.split('จำนวนชั้น')
+    lenght = len(all_floor)
+    if lenght == 1:
+        floor = detail.split('ชั้น')
+        ext_floor = extraction_floor_before(floor, ext_floor)
+    else:
+        for f in all_floor[1:lenght-1]:
+            floor = f.split('ชั้น')
+            ext_floor = extraction_floor_before(floor, ext_floor)
+    return ext_floor
+
+
 def extraction(detail):
     # which field can't extract, return None
     # filter multiple value
@@ -178,6 +217,7 @@ def extraction(detail):
     ext['size'] = extraction_size(detail)
     ext['tower'] = extraction_tower(detail)
     ext['bedroom'], ext['bathroom'] = extraction_bed_bath(detail)
+    ext['floor'] = extraction_floor(detail)
 
     if ext['price'] == -1 or ext['size'] == -1 or ext['tower'] == -1 or ext['bedroom'] == -1 or ext['bathroom'] == -1:
         return -1

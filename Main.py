@@ -8,7 +8,11 @@ import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
 import FindGroup as FG
+<<<<<<< HEAD
 import ReadWriteFile as RW
+=======
+from MyCache import create_pickle, load_pickle
+>>>>>>> master
 from pythainlp.tokenize import word_tokenize
 # from pythainlp.ner import thainer
 from operator import itemgetter
@@ -19,13 +23,29 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 if __name__ == "__main__":
     print("-- Query --")
     parameter = QF.read_json_file("parameter.json")
+<<<<<<< HEAD
     # query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
     # rows = QF.query(query_command)
     rows = QF.read_json_file("./src/condo_listings_dup.json")
+=======
+    query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
+    rows = QF.query(query_command)
+    # rows = QF.read_json_file("./src/condo_listings_dup.json")
+    # Start Construct results variable
+    df = pandas.DataFrame(rows)
+    df.set_index('id', inplace=True)
+    results = pandas.DataFrame(columns=['id', 's_group_id', 'm_group_id', 'w_group_id', 'is_core_row'])
+    results['id'] = df.index.values
+    results.set_index('id', inplace=True)
+    # End Construct results variable
+>>>>>>> master
     filter_rows = []
     multiple_row = []
+    check_floor_row = []
     not_match_row = []
-    not_found = {'price': 0, 'size': 0, 'tower': 0, 'bedroom': 0, 'bathroom': 0}
+    group_word_matrix = {}
+    corpus = {}
+    not_found = {'price': 0, 'size': 0, 'tower': 0, 'bedroom': 0, 'bathroom': 0, 'floor' : 0}
     print("-- Extraction & Filter --")
     for row in rows:
         ext = Extr.extraction(row['detail'])
@@ -42,6 +62,8 @@ if __name__ == "__main__":
             not_found['bedroom'] += 1
         if ext['bathroom'] is None:
             not_found['bathroom'] += 1
+        if ext['floor'] is None:
+            not_found['floor'] += 1
         if ext['price'] is not None and ext['price'] != row['price']:
             not_match_row.append(row)
             continue
@@ -60,29 +82,51 @@ if __name__ == "__main__":
         if ext['bathroom'] is not None and ext['bathroom'] != row['bathroom']:
             not_match_row.append(row)
             continue
-    #     if ext['floor'] is not None and ext['floor'] != row['floor']:
-    #         # field not match
-    #         continue
+        if ext['floor'] is not None and ext['floor'] != row['floor']:
+            if ext['floor'] == -1:
+                check_floor_row.append(row['id'])
+                ext['floor'] = None
+                not_found['floor'] += 1
+            else:
+                not_match_row.append(row)
+                continue
         row['ext'] = ext
         filter_rows.append(row)
     print("Not Found Context", not_found)
     print("Multiple Context", len(multiple_row), 'items')
+    print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
     print("Not Match Context", len(not_match_row), 'items')
     rows_group = QF.filter(filter_rows)
+
+    # Tokenize
+    try:
+        group_word_matrix = load_pickle('group_word_matrix')
+        print("Use cached \"group_word_matrix\"")
+    except:
+        print("Calculate \"group_word_matrix\"")
+        for group in rows_group:
+            project_id = rows_group[group][0]['project']
+            for doc in rows_group[group]:
+                doc['detail'] = doc['title'] + Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
+            # corpus = CountVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
+            matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
+            group_word_matrix[project_id] = matrix
+        create_pickle('group_word_matrix', group_word_matrix)
+
     print("-- Scoring --")
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
+
     for group in rows_group:
+        project_id = rows_group[group][0]['project']
         strong_duplicate.append(defaultdict(list))
         medium_duplicate.append([])
         calculated_docs = []
-        for doc in rows_group[group]:
-            doc['detail'] = doc['title'] + Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
-        # corpus = CountVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
-        corpus = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
+
         for i in range(len(rows_group[group])):
-            rows_group[group][i]['detail'] = corpus[i]
+            rows_group[group][i]['detail'] = group_word_matrix[project_id][i]
+
         for doc in rows_group[group]:
             most_confidence, most_duplicate_doc = -1, ''
             for calculated_doc in calculated_docs:
