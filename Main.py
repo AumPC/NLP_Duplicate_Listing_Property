@@ -1,9 +1,9 @@
-import Extraction as Extr
+import Query as Q
+import ExtractionFilter as Extr
 import Similarity as Sim
-import QueryFilter as QF
 import FindGroup as FG
 import MyCache as C
-import ReadWriteFile as RW
+import WriteFile as W
 from pythainlp.tokenize import word_tokenize
 from operator import itemgetter
 from collections import defaultdict
@@ -17,72 +17,22 @@ DEBUG = True
 if __name__ == "__main__":
     if DEBUG:
         print("-- Query --")
-    parameter = QF.read_json_file("parameter.json")
+    parameter = Q.read_json_file("parameter.json")
     if QUERY:
         query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
-        rows = QF.query(query_command)
+        rows = Q.query(query_command)
     else:
-        rows = QF.read_json_file("./src/condo_listings_dup.json")
-    filter_rows = []
-    multiple_row = []
-    check_floor_row = []
-    not_match_row = []
+        rows = Q.read_json_file("./src/condo_listings_dup.json")
     group_word_matrix = {}
-    corpus = {}
-    not_found = {'price': 0, 'size': 0, 'tower': 0, 'bedroom': 0, 'bathroom': 0, 'floor' : 0}
     if DEBUG:
         print("-- Extraction & Filter --")
-    for row in rows:
-        ext = Extr.extraction(row['detail'])
-        if ext == -1:
-            multiple_row.append(row)
-            continue
-        if ext['price'] is None:
-            not_found['price'] += 1
-        if ext['size'] is None:
-            not_found['size'] += 1
-        if ext['tower'] is None:
-            not_found['tower'] += 1
-        if ext['bedroom'] is None:
-            not_found['bedroom'] += 1
-        if ext['bathroom'] is None:
-            not_found['bathroom'] += 1
-        if ext['floor'] is None:
-            not_found['floor'] += 1
-        if ext['price'] is not None and ext['price'] != row['price']:
-            not_match_row.append(row)
-            continue
-        if ext['size'] is not None and ext['size'] != row['size']:
-            not_match_row.append(row)
-            continue
-        if ext['tower'] is not None and ext['tower'] != row['tower']:
-            if row['tower'] == '':
-                row['tower'] = ext['tower']
-            else:
-                not_match_row.append(row)
-                continue
-        if ext['bedroom'] is not None and ext['bedroom'] != row['bedroom']:
-            not_match_row.append(row)
-            continue
-        if ext['bathroom'] is not None and ext['bathroom'] != row['bathroom']:
-            not_match_row.append(row)
-            continue
-        if ext['floor'] is not None and ext['floor'] != row['floor']:
-            if ext['floor'] == -1:
-                check_floor_row.append(row['id'])
-                ext['floor'] = None
-                not_found['floor'] += 1
-            else:
-                not_match_row.append(row)
-                continue
-        row['ext'] = ext
-        filter_rows.append(row)
+    filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction(rows)
     if DEBUG:
         print("Not Found Context", not_found)
         print("Multiple Context", len(multiple_row), 'items')
         print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
         print("Not Match Context", len(not_match_row), 'items')
-    rows_group = QF.filter(filter_rows)
+    rows_group = Extr.grouping(filter_rows)
 
     # Tokenize
     try:
@@ -149,7 +99,7 @@ if __name__ == "__main__":
         for i in range(len_of_print):
             print(weak_duplicate[i])
         print('...')
-    results = RW.construct_data_frame(rows)
-    results = RW.cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
-    RW.write_results_pickle(results)
-    RW.write_results_csv(results)
+    results = W.construct_data_frame(rows)
+    results = W.cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
+    W.write_results_pickle(results)
+    W.write_results_csv(results)

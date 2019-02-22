@@ -2,8 +2,6 @@ import psycopg2
 import psycopg2.extras
 import json
 import re
-from operator import itemgetter
-from itertools import groupby
 from string import ascii_letters, punctuation, digits, whitespace
 
 
@@ -58,9 +56,3 @@ def filter_special_character(detail):
     output = [char for char in detail if char in allowed or (ord(char) >= 3585 and ord(char) <= 3674)]
     detail = ''.join(output)
     return detail
-
-def filter(rows):
-    # compare every pair in rows. return pair which very possible to be duplicate
-    # use price , size (in range) and project name
-    group = {k: list(v) for k, v in groupby(rows, key=itemgetter('project'))}
-    return {k: v for k, v in group.items() if len(v) > 1}

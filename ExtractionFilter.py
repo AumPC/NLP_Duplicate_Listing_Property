@@ -1,5 +1,7 @@
 import re
 import string
+from operator import itemgetter
+from itertools import groupby
 
 
 def extraction_price_before(detail, keyword):
@@ -201,7 +203,7 @@ def extraction_floor(detail):
     return ext_floor
 
 
-def extraction(detail):
+def detail_extraction(detail):
     # which field can't extract, return None
     # filter multiple value
 
@@ -217,3 +219,62 @@ def extraction(detail):
     if ext['price'] == -1 or ext['size'] == -1 or ext['tower'] == -1 or ext['bedroom'] == -1 or ext['bathroom'] == -1:
         return -1
     return ext
+
+
+def extraction(rows):
+    filter_rows = []
+    multiple_row = []
+    check_floor_row = []
+    not_match_row = []
+    not_found = {'price': 0, 'size': 0, 'tower': 0, 'bedroom': 0, 'bathroom': 0, 'floor': 0}
+    for row in rows:
+        ext = detail_extraction(row['detail'])
+        if ext == -1:
+            multiple_row.append(row)
+            continue
+        if ext['price'] is None:
+            not_found['price'] += 1
+        if ext['size'] is None:
+            not_found['size'] += 1
+        if ext['tower'] is None:
+            not_found['tower'] += 1
+        if ext['bedroom'] is None:
+            not_found['bedroom'] += 1
+        if ext['bathroom'] is None:
+            not_found['bathroom'] += 1
+        if ext['floor'] is None:
+            not_found['floor'] += 1
+        if ext['price'] is not None and ext['price'] != row['price']:
+            not_match_row.append(row)
+            continue
+        if ext['size'] is not None and ext['size'] != row['size']:
+            not_match_row.append(row)
+            continue
+        if ext['tower'] is not None and ext['tower'] != row['tower']:
+            if row['tower'] == '':
+                row['tower'] = ext['tower']
+            else:
+                not_match_row.append(row)
+                continue
+        if ext['bedroom'] is not None and ext['bedroom'] != row['bedroom']:
+            not_match_row.append(row)
+            continue
+        if ext['bathroom'] is not None and ext['bathroom'] != row['bathroom']:
+            not_match_row.append(row)
+            continue
+        if ext['floor'] is not None and ext['floor'] != row['floor']:
+            if ext['floor'] == -1:
+                check_floor_row.append(row['id'])
+                ext['floor'] = None
+                not_found['floor'] += 1
+            else:
+                not_match_row.append(row)
+                continue
+        row['ext'] = ext
+        filter_rows.append(row)
+    return filter_rows, multiple_row, check_floor_row, not_match_row, not_found
+
+
+def grouping(rows):
+    group = {k: list(v) for k, v in groupby(rows, key=itemgetter('project'))}
+    return {k: v for k, v in group.items() if len(v) > 1}
