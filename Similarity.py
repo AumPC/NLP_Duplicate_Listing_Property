@@ -1,5 +1,11 @@
+import MyCache as C
 from Levenshtein import distance
 from math import log
+from operator import itemgetter
+from collections import defaultdict
+from copy import deepcopy
+from pythainlp.tokenize import word_tokenize
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 def sampling(text, rate):
@@ -49,3 +55,90 @@ def score_calculate(a, b, weight, half_weight_frequency):
     detail_score = detail_similarity(a['detail'], b['detail'])
     length_weight = 1 / (1 + log(1 + (sum(a['detail']) + sum(b['detail'])) / 2, half_weight_frequency + 1))
     return (length_weight * field_score) + ((1 - length_weight) * detail_score)
+
+
+def group_find(group, score):
+    expand_group = defaultdict(list, deepcopy(group))
+    ans = {i: i for i in {s[0] for s in score}.union({s[1] for s in score})}
+    for i in score:
+        while ans[i[0]] != ans[ans[i[0]]]:
+            ans[i[0]] = ans[ans[i[0]]]
+        while ans[i[1]] != ans[ans[i[1]]]:
+            ans[i[1]] = ans[ans[i[1]]]
+        ans[i[0]] = ans[i[1]]
+    for i in ans:
+        while ans[i] != ans[ans[i]]:
+            ans[i] = ans[ans[i]]
+        if i == ans[i]:
+            continue
+        expand_group[ans[i]].append(i)
+    return expand_group
+
+
+def similarity(rows_group, group_word_matrix, parameter):
+    strong_duplicate = []
+    medium_duplicate = []
+    weak_duplicate = []
+
+    for group in rows_group:
+        project_id = rows_group[group][0]['project']
+        strong_duplicate.append(defaultdict(list))
+        medium_duplicate.append([])
+        calculated_docs = []
+
+        for i in range(len(rows_group[group])):
+            rows_group[group][i]['detail'] = group_word_matrix[project_id][i]
+
+        for doc in rows_group[group]:
+            most_confidence, most_duplicate_doc = -1, ''
+            for calculated_doc in calculated_docs:
+                confidence = score_calculate(doc, calculated_doc, parameter['weight'],
+                                                 parameter['half_weight_frequency'])
+                if confidence > most_confidence:
+                    most_confidence, most_duplicate_doc = confidence, calculated_doc['id']
+                if most_confidence >= parameter['hard_threshold']:
+                    strong_duplicate[-1][calculated_doc['id']].append(doc['id'])
+                    break
+            if most_confidence < parameter['hard_threshold']:
+                calculated_docs.append(doc)
+                if most_confidence >= parameter['soft_threshold']:
+                    medium_duplicate[-1].append((doc['id'], most_duplicate_doc, most_confidence))
+                elif most_confidence >= parameter['min_confidence']:
+                    weak_duplicate.append((doc['id'], most_duplicate_doc, most_confidence))
+        medium_duplicate[-1] = group_find(strong_duplicate[-1], medium_duplicate[-1])
+    strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
+    medium_duplicate = tuple(tuple([k] + v) for md in medium_duplicate for k, v in md.items())
+    weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
+    return strong_duplicate, medium_duplicate, weak_duplicate
+
+
+def tokenize(rows_group, parameter, DEBUG):
+    group_word_matrix = {}
+    try:
+        group_word_matrix = C.load_pickle('group_word_matrix')
+        if DEBUG:
+            print("Use cached \"group_word_matrix\"")
+    except:
+        if DEBUG:
+            print("Calculate \"group_word_matrix\"")
+        for group in rows_group:
+            project_id = rows_group[group][0]['project']
+            for doc in rows_group[group]:
+                doc['detail'] = doc['title'] + sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
+            matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
+            group_word_matrix[project_id] = matrix
+        C.create_pickle('group_word_matrix', group_word_matrix)
+    return group_word_matrix
+
+
+if __name__ == '__main__':
+    test_score = [[1, 2, 0.6],
+                  [1, 3, 0.2],
+                  [1, 4, 0.1],
+                  [2, 3, 0.3],
+                  [2, 4, 0.1],
+                  [3, 4, 0.5]]
+    group, time = group_find({}, test_score)
+    print(group)
+    for g in group:
+        print(group[g])
