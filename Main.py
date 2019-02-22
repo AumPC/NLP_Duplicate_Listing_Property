@@ -25,11 +25,11 @@ if __name__ == "__main__":
         print("Multiple Context", len(multiple_row), 'items')
         print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
         print("Not Match Context", len(not_match_row), 'items')
-    rows_group = Extr.grouping(filter_rows)
-    group_word_matrix = Sim.tokenize(rows_group, parameter, DEBUG)
+    groups = Extr.grouping(filter_rows)
+    group_word_matrix = Sim.tokenize(groups, DEBUG)
     if DEBUG:
         print("-- Scoring --")
-    strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity(rows_group, group_word_matrix, parameter)
+    strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity(groups, group_word_matrix, parameter)
     if DEBUG:
         print(len(strong_duplicate), 'strong-duplicate groups')
         for i in range(3):

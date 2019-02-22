@@ -75,21 +75,21 @@ def group_find(group, score):
     return expand_group
 
 
-def similarity(rows_group, group_word_matrix, parameter):
+def similarity(groups, group_word_matrix, parameter):
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
 
-    for group in rows_group:
-        project_id = rows_group[group][0]['project']
+    for group in groups.values():
+        project_id = group[0]['project']
         strong_duplicate.append(defaultdict(list))
         medium_duplicate.append([])
         calculated_docs = []
 
-        for i in range(len(rows_group[group])):
-            rows_group[group][i]['detail'] = group_word_matrix[project_id][i]
+        for i, doc in enumerate(group):
+            doc['detail'] = group_word_matrix[project_id][i]
 
-        for doc in rows_group[group]:
+        for doc in group:
             most_confidence, most_duplicate_doc = -1, ''
             for calculated_doc in calculated_docs:
                 confidence = score_calculate(doc, calculated_doc, parameter['weight'],
@@ -112,22 +112,20 @@ def similarity(rows_group, group_word_matrix, parameter):
     return strong_duplicate, medium_duplicate, weak_duplicate
 
 
-def tokenize(rows_group, parameter, DEBUG):
+def tokenize(groups, DEBUG):
     group_word_matrix = {}
     try:
-        group_word_matrix = C.load_pickle('group_word_matrix')
+        group_word_matrix = C.load_pickle('group_word_matrix', DEBUG)
         if DEBUG:
             print("Use cached \"group_word_matrix\"")
     except:
         if DEBUG:
             print("Calculate \"group_word_matrix\"")
-        for group in rows_group:
-            project_id = rows_group[group][0]['project']
-            for doc in rows_group[group]:
-                doc['detail'] = doc['title'] + sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
-            matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
+        for group in groups.values():
+            project_id = group[0]['project']
+            matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['title'] + doc['detail'] for doc in group]).toarray()
             group_word_matrix[project_id] = matrix
-        C.create_pickle('group_word_matrix', group_word_matrix)
+        C.create_pickle('group_word_matrix', group_word_matrix, DEBUG)
     return group_word_matrix
 
 

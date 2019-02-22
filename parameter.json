@@ -7,7 +7,6 @@
     "bedroom": 0.075,
     "bathroom": 0.075
   },
-  "sampling_rate": 1,
   "half_weight_frequency": 9,
   "min_confidence": 0.75,
   "hard_threshold": 0.9,
