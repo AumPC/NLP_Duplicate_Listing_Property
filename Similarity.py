@@ -3,6 +3,7 @@ from Levenshtein import distance
 from math import log
 from operator import itemgetter
 from collections import defaultdict
+from itertools import combinations
 from copy import deepcopy
 from pythainlp.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -57,86 +58,84 @@ def score_calculate(a, b, weight, half_weight_frequency):
     return (length_weight * field_score) + ((1 - length_weight) * detail_score)
 
 
-def group_find(group, score):
-    expand_group = defaultdict(list, deepcopy(group))
-    ans = {i: i for i in {s[0] for s in score}.union({s[1] for s in score})}
-    for i in score:
-        while ans[i[0]] != ans[ans[i[0]]]:
-            ans[i[0]] = ans[ans[i[0]]]
-        while ans[i[1]] != ans[ans[i[1]]]:
-            ans[i[1]] = ans[ans[i[1]]]
-        ans[i[0]] = ans[i[1]]
+def group_find(pairs, default_group=None):
+    if default_group is None:
+        group = defaultdict(list)
+    else:
+        group = defaultdict(list, deepcopy(default_group))
+    ans = {i: i for i in {a for a, b in pairs}.union({b for a, b in pairs})}
+    for a, b in pairs:
+        while ans[a] != ans[ans[a]]:
+            ans[a] = ans[ans[a]]
+        while ans[b] != ans[ans[b]]:
+            ans[b] = ans[ans[b]]
+        ans[a] = ans[b]
     for i in ans:
         while ans[i] != ans[ans[i]]:
             ans[i] = ans[ans[i]]
         if i == ans[i]:
             continue
-        expand_group[ans[i]].append(i)
-    return expand_group
+        group[ans[i]].append(i)
+    return group
 
 
-def similarity(groups, group_word_matrix, parameter):
+def similarity(projects, group_word_matrix, parameter):
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
-
-    for group in groups.values():
-        project_id = group[0]['project']
-        strong_duplicate.append(defaultdict(list))
-        medium_duplicate.append([])
-        calculated_docs = []
-
-        for i, doc in enumerate(group):
+    for project in projects.values():
+        project_id = project[0]['project']
+        strong_duplicate_pairs = []
+        medium_duplicate_pairs = []
+        for i, doc in enumerate(project):
             doc['detail'] = group_word_matrix[project_id][i]
-
-        for doc in group:
-            most_confidence, most_duplicate_doc = -1, ''
-            for calculated_doc in calculated_docs:
-                confidence = score_calculate(doc, calculated_doc, parameter['weight'],
-                                                 parameter['half_weight_frequency'])
-                if confidence > most_confidence:
-                    most_confidence, most_duplicate_doc = confidence, calculated_doc['id']
-                if most_confidence >= parameter['hard_threshold']:
-                    strong_duplicate[-1][calculated_doc['id']].append(doc['id'])
-                    break
-            if most_confidence < parameter['hard_threshold']:
-                calculated_docs.append(doc)
-                if most_confidence >= parameter['soft_threshold']:
-                    medium_duplicate[-1].append((doc['id'], most_duplicate_doc, most_confidence))
-                elif most_confidence >= parameter['min_confidence']:
-                    weak_duplicate.append((doc['id'], most_duplicate_doc, most_confidence))
-        medium_duplicate[-1] = group_find(strong_duplicate[-1], medium_duplicate[-1])
+        calculated_docs = [(a['id'], b['id'], score_calculate(a, b, parameter['weight'], parameter['half_weight_frequency'])) for a, b in combinations(project, 2)]
+        most_confidences = {i['id']: (i['id'], 0) for i in project}
+        for a, b, score in calculated_docs:
+            if most_confidences[a][1] < score:
+                most_confidences[a] = (b, score)
+            if most_confidences[b][1] < score:
+                most_confidences[b] = (a, score)
+        for doc, most_confidence in most_confidences.items():
+            if most_confidence[1] >= parameter['hard_threshold']:
+                strong_duplicate_pairs.append((doc, most_confidence[0]))
+            elif most_confidence[1] >= parameter['soft_threshold']:
+                medium_duplicate_pairs.append((doc, most_confidence[0]))
+            elif most_confidence[1] >= parameter['min_confidence']:
+                weak_duplicate.append((doc, most_confidence[0], most_confidence[1]))
+        strong_duplicate.append(group_find(strong_duplicate_pairs))
+        medium_duplicate.append(group_find(medium_duplicate_pairs, strong_duplicate[-1]))
     strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
     medium_duplicate = tuple(tuple([k] + v) for md in medium_duplicate for k, v in md.items())
     weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
     return strong_duplicate, medium_duplicate, weak_duplicate
 
 
-def tokenize(groups, DEBUG):
+def tokenize(projects, DEBUG):
     group_word_matrix = {}
     try:
         group_word_matrix = C.load_pickle('group_word_matrix', DEBUG)
         if DEBUG:
             print("Use cached \"group_word_matrix\"")
-    except:
+    except FileNotFoundError:
         if DEBUG:
             print("Calculate \"group_word_matrix\"")
-        for group in groups.values():
-            project_id = group[0]['project']
-            matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['title'] + doc['detail'] for doc in group]).toarray()
+        for project in projects.values():
+            project_id = project[0]['project']
+            matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
             group_word_matrix[project_id] = matrix
         C.create_pickle('group_word_matrix', group_word_matrix, DEBUG)
     return group_word_matrix
 
 
 if __name__ == '__main__':
-    test_score = [[1, 2, 0.6],
-                  [1, 3, 0.2],
-                  [1, 4, 0.1],
-                  [2, 3, 0.3],
-                  [2, 4, 0.1],
-                  [3, 4, 0.5]]
-    group, time = group_find({}, test_score)
+    test_pair = [(1, 2),
+                 (1, 3),
+                 (1, 4),
+                 (2, 3),
+                 (2, 4),
+                 (3, 4)]
+    group = group_find(test_pair)
     print(group)
     for g in group:
         print(group[g])

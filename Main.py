@@ -25,11 +25,11 @@ if __name__ == "__main__":
         print("Multiple Context", len(multiple_row), 'items')
         print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
         print("Not Match Context", len(not_match_row), 'items')
-    groups = Extr.grouping(filter_rows)
-    group_word_matrix = Sim.tokenize(groups, DEBUG)
+    projects = Extr.group_by_project(filter_rows)
+    group_word_matrix = Sim.tokenize(projects, DEBUG)
     if DEBUG:
         print("-- Scoring --")
-    strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity(groups, group_word_matrix, parameter)
+    strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity(projects, group_word_matrix, parameter)
     if DEBUG:
         print(len(strong_duplicate), 'strong-duplicate groups')
         for i in range(3):
@@ -45,6 +45,12 @@ if __name__ == "__main__":
         for i in range(len_of_print):
             print(weak_duplicate[i])
         print('...')
+        from itertools import combinations
+        for group, another_group in combinations(medium_duplicate, 2):
+            if set(group).issubset(another_group):
+                print(group)
+                print(another_group)
+                print('...')
     results = W.construct_data_frame(rows)
     results = W.cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
     W.write_results_pickle(results)
