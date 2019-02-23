@@ -14,7 +14,7 @@ if __name__ == "__main__":
     parameter = Q.read_json_file("parameter.json")
     if QUERY:
         query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
-        rows = Q.query(query_command)
+        rows = Q.query(query_command, DEBUG)
     else:
         rows = Q.read_json_file("./src/condo_listings_dup.json")
     if DEBUG:
@@ -45,12 +45,6 @@ if __name__ == "__main__":
         for i in range(len_of_print):
             print(weak_duplicate[i])
         print('...')
-        from itertools import combinations
-        for group, another_group in combinations(medium_duplicate, 2):
-            if set(group).issubset(another_group):
-                print(group)
-                print(another_group)
-                print('...')
     results = W.construct_data_frame(rows)
     results = W.cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
     W.write_results_pickle(results)

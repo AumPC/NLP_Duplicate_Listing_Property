@@ -9,11 +9,6 @@ from pythainlp.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-def sampling(text, rate):
-    width = rate*len(text)/10
-    return ' '.join([text[int(len(text)/i-width):int(len(text)/i+width)] for i in range(1, 10, 2)])
-
-
 def different_numerical(a, b):
     try:
         return 1 - (abs(a - b) * 2 / (a + b))
@@ -46,8 +41,8 @@ def field_similarity(a, b, weight):
 
 
 def detail_similarity(a, b):
-    intersect = sum([min(a[i], b[i]) for i in range(len(a))])
-    union = sum([max(a[i], b[i]) for i in range(len(a))])
+    intersect = sum([min(i, j) for i, j in zip(a, b)])
+    union = sum([max(i, j) for i ,j in zip(a, b)])
     return (1+intersect)/(1+union)
 
 

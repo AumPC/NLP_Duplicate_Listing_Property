@@ -5,13 +5,14 @@ import re
 from string import ascii_letters, punctuation, digits, whitespace
 
 
-def query(query_command):
+def query(query_command, DEBUG):
     file_object = open('./password_db.txt', 'r')
     conn = psycopg2.connect("dbname=Temp user=postgres password="+file_object.readline())
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(query_command)
     rows = cur.fetchall()
-    print("The number of data: ", cur.rowcount)
+    if DEBUG:
+        print("The number of data: ", cur.rowcount)
     listing = []
     for row in rows:
         condo = {'id': row['id'], 'user_id': row['user_id'], 'title': row['title']}
