@@ -2,6 +2,7 @@ import Extraction as Extr
 import Similarity as Sim
 import QueryFilter as QF
 import FindGroup as FG
+from MyCache import create_pickle, load_pickle
 from pythainlp.tokenize import word_tokenize
 from operator import itemgetter
 from collections import defaultdict
@@ -59,6 +60,8 @@ if __name__ == "__main__":
     multiple_row = []
     check_floor_row = []
     not_match_row = []
+    group_word_matrix = {}
+    corpus = {}
     not_found = {'price': 0, 'size': 0, 'tower': 0, 'bedroom': 0, 'bathroom': 0, 'floor' : 0}
     print("-- Extraction & Filter --")
     for row in rows:
@@ -112,20 +115,36 @@ if __name__ == "__main__":
     print("Floor Multiple Context", len(check_floor_row))
     print("Not Match Context", len(not_match_row), 'items')
     rows_group = QF.filter(filter_rows)
+
+    # Tokenize
+    try:
+        group_word_matrix = load_pickle('group_word_matrix')
+        print("Use cached \"group_word_matrix\"")
+    except:
+        print("Calculate \"group_word_matrix\"")
+        for group in rows_group:
+            project_id = rows_group[group][0]['project']
+            for doc in rows_group[group]:
+                doc['detail'] = doc['title'] + Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
+            # corpus = CountVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
+            matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
+            group_word_matrix[project_id] = matrix
+        create_pickle('group_word_matrix', group_word_matrix)
+
     print("-- Scoring --")
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
+
     for group in rows_group:
+        project_id = rows_group[group][0]['project']
         strong_duplicate.append(defaultdict(list))
         medium_duplicate.append([])
         calculated_docs = []
-        for doc in rows_group[group]:
-            doc['detail'] = doc['title'] + Sim.sampling(doc['detail'], parameter['sampling_rate']) if parameter['sampling_rate'] < 1 else doc['title'] + doc['detail']
-        # corpus = CountVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
-        corpus = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['detail'] for doc in rows_group[group]]).toarray()
+
         for i in range(len(rows_group[group])):
-            rows_group[group][i]['detail'] = corpus[i]
+            rows_group[group][i]['detail'] = group_word_matrix[project_id][i]
+
         for doc in rows_group[group]:
             most_confidence, most_duplicate_doc = -1, ''
             for calculated_doc in calculated_docs:

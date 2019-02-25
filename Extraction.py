@@ -102,8 +102,8 @@ def extraction_size(detail):
         'sqm,'
     ]
     postfix_keyword = [
-        # 'ขนาด', 
-        # 'พื้นที่', 
+        # 'ขนาด',
+        # 'พื้นที่',
         'sq.m.):']
     ext_size = list(set(extraction_size_before(detail, prefix_keyword) + extraction_size_after(detail, postfix_keyword)))
     if len(ext_size) > 1:
@@ -146,7 +146,7 @@ def extraction_tower(detail):
 
 def extraction_bed_bath(detail):
     patterns = ['([0-9, ]+)ห้องนอน([0-9, ]+)ห้องน้ำ', 'ห้องนอน([0-9, ]+)ห้องน้ำ([0-9, ]+)',
-                '([0-9, ]+)นอน([0-9, ]+)น้ำ', 'นอน([0-9, ]+)น้ำ([0-9, ]+)', 
+                '([0-9, ]+)นอน([0-9, ]+)น้ำ', 'นอน([0-9, ]+)น้ำ([0-9, ]+)',
                 '([0-9, ]+)bedroom([0-9, ]+) bathroom', '([0-9, ]+)bed([0-9, ]+)bath',]
     bedroom = set()
     bathroom = set()
