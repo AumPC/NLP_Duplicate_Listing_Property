@@ -2,21 +2,17 @@ import psycopg2
 import psycopg2.extras
 import json
 import re
-from operator import itemgetter
-from itertools import groupby
 from string import ascii_letters, punctuation, digits, whitespace
 
 
-def query(query_command):
-    # connect to postgresql database using psycopg2
-    # in python3, do not pip psycopg2. please pip psycopg2-binary instead
-    # tip: use RealDictCursor to query object as dictionary
+def query(query_command, DEBUG):
     file_object = open('./password_db.txt', 'r')
     conn = psycopg2.connect("dbname=Temp user=postgres password="+file_object.readline())
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(query_command)
     rows = cur.fetchall()
-    print("The number of data: ", cur.rowcount)
+    if DEBUG:
+        print("The number of data: ", cur.rowcount)
     listing = []
     for row in rows:
         condo = {'id': row['id'], 'user_id': row['user_id'], 'title': row['title']}
@@ -61,9 +57,3 @@ def filter_special_character(detail):
     output = [char for char in detail if char in allowed or (ord(char) >= 3585 and ord(char) <= 3674)]
     detail = ''.join(output)
     return detail
-
-def filter(rows):
-    # compare every pair in rows. return pair which very possible to be duplicate
-    # use price , size (in range) and project name
-    group = {k: list(v) for k, v in groupby(rows, key=itemgetter('project'))}
-    return {k: v for k, v in group.items() if len(v) > 1}

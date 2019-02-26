@@ -1,5 +1,7 @@
 import re
 import string
+from operator import itemgetter
+from itertools import groupby
 
 
 def extraction_price_before(detail, keyword):
@@ -146,8 +148,8 @@ def extraction_tower(detail):
 
 def extraction_bed_bath(detail):
     patterns = ['([0-9, ]+)ห้องนอน([0-9, ]+)ห้องน้ำ', 'ห้องนอน([0-9, ]+)ห้องน้ำ([0-9, ]+)',
-                '([0-9, ]+)นอน([0-9, ]+)น้ำ', 'นอน([0-9, ]+)น้ำ([0-9, ]+)',
-                '([0-9, ]+)bedroom([0-9, ]+) bathroom', '([0-9, ]+)bed([0-9, ]+)bath',]
+                '([0-9, ]+)นอน([0-9, ]+)น้ำ', 'นอน([0-9, ]+)น้ำ([0-9, ]+)', 
+                '([0-9, ]+)bedroom([0-9, ]+) bathroom', '([0-9, ]+)bed([0-9, ]+)bath']
     bedroom = set()
     bathroom = set()
     for p in patterns:
@@ -187,24 +189,22 @@ def extraction_floor_before(floor, ext_floor):
                 return -1
     return ext_floor
 
+
 def extraction_floor(detail):
     ext_floor = None
     all_floor = detail.split('จำนวนชั้น')
-    lenght = len(all_floor)
-    if lenght == 1:
+    length = len(all_floor)
+    if length == 1:
         floor = detail.split('ชั้น')
         ext_floor = extraction_floor_before(floor, ext_floor)
     else:
-        for f in all_floor[1:lenght-1]:
+        for f in all_floor[1:length-1]:
             floor = f.split('ชั้น')
             ext_floor = extraction_floor_before(floor, ext_floor)
     return ext_floor
 
 
-def extraction(detail):
-    # which field can't extract, return None
-    # filter multiple value
-
+def detail_extraction(detail):
     ext = {'price': None, 'size': None, 'tower': None, 'floor': None, 'bedroom': None, 'bathroom': None}
     if not detail:
         return ext
@@ -213,7 +213,65 @@ def extraction(detail):
     ext['tower'] = extraction_tower(detail)
     ext['bedroom'], ext['bathroom'] = extraction_bed_bath(detail)
     ext['floor'] = extraction_floor(detail)
-
     if ext['price'] == -1 or ext['size'] == -1 or ext['tower'] == -1 or ext['bedroom'] == -1 or ext['bathroom'] == -1:
         return -1
     return ext
+
+
+def extraction(rows):
+    filter_rows = []
+    multiple_row = []
+    check_floor_row = []
+    not_match_row = []
+    not_found = {'price': 0, 'size': 0, 'tower': 0, 'bedroom': 0, 'bathroom': 0, 'floor': 0}
+    for row in rows:
+        ext = detail_extraction(row['detail'])
+        if ext == -1:
+            multiple_row.append(row)
+            continue
+        if ext['price'] is None:
+            not_found['price'] += 1
+        if ext['size'] is None:
+            not_found['size'] += 1
+        if ext['tower'] is None:
+            not_found['tower'] += 1
+        if ext['bedroom'] is None:
+            not_found['bedroom'] += 1
+        if ext['bathroom'] is None:
+            not_found['bathroom'] += 1
+        if ext['floor'] is None:
+            not_found['floor'] += 1
+        if ext['price'] is not None and ext['price'] != row['price']:
+            not_match_row.append(row)
+            continue
+        if ext['size'] is not None and ext['size'] != row['size']:
+            not_match_row.append(row)
+            continue
+        if ext['tower'] is not None and ext['tower'] != row['tower']:
+            if row['tower'] == '':
+                row['tower'] = ext['tower']
+            else:
+                not_match_row.append(row)
+                continue
+        if ext['bedroom'] is not None and ext['bedroom'] != row['bedroom']:
+            not_match_row.append(row)
+            continue
+        if ext['bathroom'] is not None and ext['bathroom'] != row['bathroom']:
+            not_match_row.append(row)
+            continue
+        if ext['floor'] is not None and ext['floor'] != row['floor']:
+            if ext['floor'] == -1:
+                check_floor_row.append(row['id'])
+                ext['floor'] = None
+                not_found['floor'] += 1
+            else:
+                not_match_row.append(row)
+                continue
+        row['ext'] = ext
+        filter_rows.append(row)
+    return filter_rows, multiple_row, check_floor_row, not_match_row, not_found
+
+
+def group_by_project(rows):
+    group = {k: list(v) for k, v in groupby(rows, key=itemgetter('project'))}
+    return {k: v for k, v in group.items() if len(v) > 1}

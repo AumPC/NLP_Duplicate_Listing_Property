@@ -1,4 +1,4 @@
-import QueryFilter as QF
+import Query as Q
 import json
 
 # export from database to JSON
@@ -13,5 +13,5 @@ if __name__ == "__main__":
     query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC limit 100"
     # file path here
     file_path = "src/condo_listings_sample.json"
-    data = QF.query(query_command)
+    data = Q.query(query_command)
     save_to_file(data, file_path)
