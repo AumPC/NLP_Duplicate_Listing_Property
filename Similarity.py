@@ -1,10 +1,6 @@
-import MyCache as C
 from Levenshtein import distance
 from math import log
 from operator import itemgetter
-from collections import defaultdict
-from itertools import combinations
-from copy import deepcopy
 from pythainlp.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -42,7 +38,7 @@ def field_similarity(a, b, weight):
 
 def detail_similarity(a, b):
     intersect = sum([min(i, j) for i, j in zip(a, b)])
-    union = sum([max(i, j) for i ,j in zip(a, b)])
+    union = sum([max(i, j) for i, j in zip(a, b)])
     return (1+intersect)/(1+union)
 
 
@@ -53,84 +49,33 @@ def score_calculate(a, b, weight, half_weight_frequency):
     return (length_weight * field_score) + ((1 - length_weight) * detail_score)
 
 
-def group_find(pairs, default_group=None):
-    if default_group is None:
-        group = defaultdict(list)
-    else:
-        group = defaultdict(list, deepcopy(default_group))
-    ans = {i: i for i in {a for a, b in pairs}.union({b for a, b in pairs})}
-    for a, b in pairs:
-        while ans[a] != ans[ans[a]]:
-            ans[a] = ans[ans[a]]
-        while ans[b] != ans[ans[b]]:
-            ans[b] = ans[ans[b]]
-        ans[a] = ans[b]
-    for i in ans:
-        while ans[i] != ans[ans[i]]:
-            ans[i] = ans[ans[i]]
-        if i == ans[i]:
-            continue
-        group[ans[i]].append(i)
-    return group
-
-
-def similarity(projects, group_word_matrix, parameter):
+def similarity(request, matrix, parameter):
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
-    for project in projects.values():
-        project_id = project[0]['project']
-        strong_duplicate_pairs = []
-        medium_duplicate_pairs = []
-        for i, doc in enumerate(project):
-            doc['detail'] = group_word_matrix[project_id][i]
-        calculated_docs = [(a['id'], b['id'], score_calculate(a, b, parameter['weight'], parameter['half_weight_frequency'])) for a, b in combinations(project, 2)]
-        most_confidences = {i['id']: (i['id'], 0) for i in project}
-        for a, b, score in calculated_docs:
-            if most_confidences[a][1] < score:
-                most_confidences[a] = (b, score)
-            if most_confidences[b][1] < score:
-                most_confidences[b] = (a, score)
-        for doc, most_confidence in most_confidences.items():
-            if most_confidence[1] >= parameter['hard_threshold']:
-                strong_duplicate_pairs.append((doc, most_confidence[0]))
-            elif most_confidence[1] >= parameter['soft_threshold']:
-                medium_duplicate_pairs.append((doc, most_confidence[0]))
-            elif most_confidence[1] >= parameter['min_confidence']:
-                weak_duplicate.append((doc, most_confidence[0], most_confidence[1]))
-        strong_duplicate.append(group_find(strong_duplicate_pairs))
-        medium_duplicate.append(group_find(medium_duplicate_pairs, strong_duplicate[-1]))
-    strong_duplicate = tuple(tuple([k] + v) for sd in strong_duplicate for k, v in sd.items())
-    medium_duplicate = tuple(tuple([k] + v) for md in medium_duplicate for k, v in md.items())
+    scores = [(doc['id'], score_calculate(request, doc, parameter['weight'], parameter['half_weight_frequency'])) for doc in matrix]
+    for doc, score in scores:
+        if score >= parameter['hard_threshold']:
+            strong_duplicate.append((doc, score))
+        elif score >= parameter['soft_threshold']:
+            medium_duplicate.append((doc, score))
+        elif score >= parameter['min_confidence']:
+            weak_duplicate.append((doc, score))
+    strong_duplicate = sorted(strong_duplicate, key=itemgetter(2), reverse=True)
+    medium_duplicate = sorted(medium_duplicate, key=itemgetter(2), reverse=True)
     weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
     return strong_duplicate, medium_duplicate, weak_duplicate
 
 
-def tokenize(projects, DEBUG):
-    group_word_matrix = {}
-    try:
-        group_word_matrix = C.load_pickle('group_word_matrix', DEBUG)
-        if DEBUG:
-            print("Use cached \"group_word_matrix\"")
-    except FileNotFoundError:
-        if DEBUG:
-            print("Calculate \"group_word_matrix\"")
-        for project in projects.values():
-            project_id = project[0]['project']
-            matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
-            group_word_matrix[project_id] = matrix
-        C.create_pickle('group_word_matrix', group_word_matrix, DEBUG)
-    return group_word_matrix
+def tokenize(projects):
+    for project in projects.values():
+        matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
+        for i, doc in enumerate(project):
+            doc['detail'] = matrix[i]
 
 
-if __name__ == '__main__':
-    test_pair = [(1, 2),
-                 (1, 3),
-                 (1, 4),
-                 (2, 3),
-                 (2, 4),
-                 (3, 4)]
-    group = group_find(test_pair)
-    print(group)
-    for g in group:
-        print(group[g])
+def tokenize_request(request, matrix):
+    corpus = [doc['title'] + doc['detail'] for doc in matrix]
+    corpus.append(request[0]['title'] + request[0]['detail'])
+    request[0]['detail'] = TfidfVectorizer(tokenizer=word_tokenize).fit_transform(corpus).toarray()[-1]
+    return request[0]
