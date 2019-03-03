@@ -8,6 +8,18 @@ QUERY = False
 DEBUG = True
 
 
+def create_update_id(id):
+    return {}
+
+def delete_id(id):
+    return {}
+
+def check_post(request):
+    return {}
+
+def check_all():
+    return {}
+
 if __name__ == "__main__":
     if DEBUG:
         print("-- Query --")
