@@ -7,16 +7,18 @@ import WriteFile as W
 QUERY = False
 DEBUG = True
 
+TABLE = "condo_listings"
+
 
 def update():
     # version 1 : query all, replace to local database all
     if DEBUG:
         print("-- Query --")
     if QUERY:
-        query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
-        rows = Q.query(query_command, DEBUG)
+        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"
+        rows = Q.query(query_command, False, DEBUG)
     else:
-        rows = Q.read_json_file("./src/condo_listings_dup.json")
+        rows = Q.read_json_file("./data/condo_listings_dup.json")
     if DEBUG:
         print("-- Extraction & Filter --")
     filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction(rows)
@@ -46,12 +48,12 @@ def check_post(request):
         if DEBUG:
             print("Detect type 'ID', query body from local database")
         query_command = ""  #TODO edit here, query body data if id is given
-        request = Q.query_local(query_command, DEBUG)[0] #TODO bug if result is none
+        request = Q.query(query_command, True, DEBUG)[0] #TODO bug if result is none
     if DEBUG:
         print("-- Query --")
     parameter = Q.read_json_file("../parameter.json")
     query_command = "" #TODO edit here, query all row in request's project_id
-    matrix = Q.query_local(query_command, DEBUG)
+    matrix = Q.query(query_command, True, DEBUG)
     if DEBUG:
         print("-- Extraction & Filter --")
     filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction([request]) # should we extract this?
@@ -90,10 +92,10 @@ def check_all():
         print("-- Query --")
     parameter = Q.read_json_file("parameter.json")
     if QUERY:
-        query_command = "SELECT * FROM condo_listings_sample where id != 576432 order by condo_project_id, user_id DESC"
-        rows = Q.query(query_command, DEBUG)
+        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"
+        rows = Q.query(query_command, False, DEBUG)
     else:
-        rows = Q.read_json_file("./src/condo_listings_dup.json")
+        rows = Q.read_json_file("./data/condo_listings_dup.json")
     if DEBUG:
         print("-- Extraction & Filter --")
     filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction(rows)
