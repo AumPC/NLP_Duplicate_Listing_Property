@@ -49,7 +49,7 @@ def check_post(request):
         request = Q.query_local(query_command, DEBUG)[0] #TODO bug if result is none
     if DEBUG:
         print("-- Query --")
-    parameter = Q.read_json_file("parameter.json")
+    parameter = Q.read_json_file("../parameter.json")
     query_command = "" #TODO edit here, query all row in request's project_id
     matrix = Q.query_local(query_command, DEBUG)
     if DEBUG:

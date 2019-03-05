@@ -1,8 +1,8 @@
 /__pycache__
-/password_db.txt
-/src
+/data
 /cached
 /.idea
 .vscode
-results*
+parameter_db.json
+/results
 /env

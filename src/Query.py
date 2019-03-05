@@ -6,7 +6,7 @@ from string import ascii_letters, punctuation, digits, whitespace
 
 
 def query(query_command, DEBUG):
-    file_object = open('./password_db.txt', 'r')
+    file_object = read_json_file('../parameter_db.json')
     conn = psycopg2.connect("dbname=Temp user=postgres password="+file_object.readline())
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(query_command)
