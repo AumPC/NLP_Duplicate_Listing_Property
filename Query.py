@@ -57,3 +57,20 @@ def filter_special_character(detail):
     output = [char for char in detail if char in allowed or (ord(char) >= 3585 and ord(char) <= 3674)]
     detail = ''.join(output)
     return detail
+
+
+def query_local(query_command, DEBUG):
+    #TODO set this (assume that data store with correct format)
+    file_object = open('./password_db.txt', 'r')
+    conn = psycopg2.connect("dbname=Temp user=postgres password=" + file_object.readline())
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute(query_command)
+    rows = cur.fetchall()
+    if DEBUG:
+        print("The number of data: ", cur.rowcount)
+    return rows
+
+
+def write_database(data):
+    #TODO version 1 : replace data to local database
+    pass

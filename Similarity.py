@@ -1,4 +1,3 @@
-import MyCache as C
 from Levenshtein import distance
 from math import log
 from operator import itemgetter
@@ -42,7 +41,7 @@ def field_similarity(a, b, weight):
 
 def detail_similarity(a, b):
     intersect = sum([min(i, j) for i, j in zip(a, b)])
-    union = sum([max(i, j) for i ,j in zip(a, b)])
+    union = sum([max(i, j) for i, j in zip(a, b)])
     return (1+intersect)/(1+union)
 
 
@@ -74,7 +73,25 @@ def group_find(pairs, default_group=None):
     return group
 
 
-def similarity(projects, group_word_matrix, parameter):
+def similarity_req(request, matrix, parameter):
+    strong_duplicate = []
+    medium_duplicate = []
+    weak_duplicate = []
+    scores = [(doc['id'], score_calculate(request, doc, parameter['weight'], parameter['half_weight_frequency'])) for doc in matrix]
+    for doc, score in scores:
+        if score >= parameter['hard_threshold']:
+            strong_duplicate.append((doc, score))
+        elif score >= parameter['soft_threshold']:
+            medium_duplicate.append((doc, score))
+        elif score >= parameter['min_confidence']:
+            weak_duplicate.append((doc, score))
+    strong_duplicate = sorted(strong_duplicate, key=itemgetter(2), reverse=True)
+    medium_duplicate = sorted(medium_duplicate, key=itemgetter(2), reverse=True)
+    weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
+    return strong_duplicate, medium_duplicate, weak_duplicate
+
+
+def similarity_all(projects, group_word_matrix, parameter):
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
@@ -106,31 +123,26 @@ def similarity(projects, group_word_matrix, parameter):
     return strong_duplicate, medium_duplicate, weak_duplicate
 
 
+def tokenize_new(projects):
+    for project in projects.values():
+        matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
+        for i, doc in enumerate(project):
+            doc['detail'] = matrix[i]
+
+
 def tokenize(projects, DEBUG):
     group_word_matrix = {}
-    try:
-        group_word_matrix = C.load_pickle('group_word_matrix', DEBUG)
-        if DEBUG:
-            print("Use cached \"group_word_matrix\"")
-    except FileNotFoundError:
-        if DEBUG:
-            print("Calculate \"group_word_matrix\"")
-        for project in projects.values():
-            project_id = project[0]['project']
-            matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
-            group_word_matrix[project_id] = matrix
-        C.create_pickle('group_word_matrix', group_word_matrix, DEBUG)
+    if DEBUG:
+        print("Calculate \"group_word_matrix\"")
+    for project in projects.values():
+        project_id = project[0]['project']
+        matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
+        group_word_matrix[project_id] = matrix
     return group_word_matrix
 
 
-if __name__ == '__main__':
-    test_pair = [(1, 2),
-                 (1, 3),
-                 (1, 4),
-                 (2, 3),
-                 (2, 4),
-                 (3, 4)]
-    group = group_find(test_pair)
-    print(group)
-    for g in group:
-        print(group[g])
+def tokenize_request(request, matrix):
+    corpus = [doc['title'] + doc['detail'] for doc in matrix]
+    corpus.append(request[0]['title'] + request[0]['detail'])
+    request[0]['detail'] = TfidfVectorizer(tokenizer=word_tokenize).fit_transform(corpus).toarray()[-1]
+    return request[0]
