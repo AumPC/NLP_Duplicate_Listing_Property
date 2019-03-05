@@ -6,8 +6,8 @@ from string import ascii_letters, punctuation, digits, whitespace
 
 
 def query(query_command, is_local, DEBUG):
-    param_db = read_json_file('../parameter_db.json')
-    conn = psycopg2.connect("dbname=" + param_db['db_name'] + "user=" + param_db['username'] + "password=" + param_db['password'])
+    param_db = read_json_file('parameter_db.json')
+    conn = psycopg2.connect("dbname=" + param_db['db_name'] + " user=" + param_db['username'] + " password=" + param_db['password'])
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(query_command)
     rows = cur.fetchall()

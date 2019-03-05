@@ -1,6 +1,6 @@
 from flask import Flask
 from flask import request
-import src/Main as M
+import src.Main as M
 import json
 app = Flask(__name__)
 

@@ -1,5 +1,14 @@
 import pandas
 import pickle
+import json
+import os
+
+
+# export from database to JSON
+def save_to_file(data, filename):
+    open_file = open(filename, 'w')
+    json.dump(data, open_file, sort_keys=True, indent=4)
+    open_file.close()
 
 
 def construct_data_frame(rows):
@@ -35,10 +44,12 @@ def cal_results(df, sd, md, wd):
     return df
 
 
-def write_results_pickle(data, file='results.pkl'):
-    with open(file, 'wb') as f:
+def write_results_pickle(data, file='result_group.pkl'):
+    if not os.path.exists("results/"):
+        os.mkdir("results/")
+    with open('results/' + file, 'wb') as f:
         pickle.dump(data, f)
 
 
-def write_results_csv(data, file='results.csv'):
+def write_results_csv(data, file='results/result_group.csv'):
     data.to_csv(file)

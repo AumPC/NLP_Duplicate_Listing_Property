@@ -1,13 +1,13 @@
-import Query as Q
-import ExtractionFilter as Extr
-import Similarity as Sim
-import WriteFile as W
+import src.Query as Q
+import src.ExtractionFilter as Extr
+import src.Similarity as Sim
+import src.WriteFile as W
 
 
-QUERY = False
+QUERY = True
 DEBUG = True
 
-TABLE = "condo_listings"
+TABLE = "condo_listings_dup"
 
 
 def update():
@@ -21,12 +21,7 @@ def update():
         rows = Q.read_json_file("./data/condo_listings_dup.json")
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction(rows)
-    if DEBUG:
-        print("Not Found Context", not_found)
-        print("Multiple Context", len(multiple_row), 'items')
-        print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
-        print("Not Match Context", len(not_match_row), 'items')
+    filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction(rows, DEBUG)
     projects = Extr.group_by_project(filter_rows)
     Sim.tokenize_new(projects)
     Q.write_database(projects) #TODO fill this function
@@ -56,12 +51,7 @@ def check_post(request):
     matrix = Q.query(query_command, True, DEBUG)
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction([request]) # should we extract this?
-    if DEBUG:
-        print("Not Found Context", not_found)
-        print("Multiple Context", len(multiple_row), 'items')
-        print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
-        print("Not Match Context", len(not_match_row), 'items')
+    filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction([request], DEBUG) # should we extract this?
     if not filter_rows:
         return 'error'
     request = Sim.tokenize_request(filter_rows, matrix) #TODO tfidf config?
@@ -98,12 +88,7 @@ def check_all():
         rows = Q.read_json_file("./data/condo_listings_dup.json")
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction(rows)
-    if DEBUG:
-        print("Not Found Context", not_found)
-        print("Multiple Context", len(multiple_row), 'items')
-        print("Floor Multiple Context", len(check_floor_row), 'items', check_floor_row)
-        print("Not Match Context", len(not_match_row), 'items')
+    filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction(rows, DEBUG)
     projects = Extr.group_by_project(filter_rows)
     group_word_matrix = Sim.tokenize(projects, DEBUG)
     if DEBUG:
@@ -125,11 +110,12 @@ def check_all():
         for i in range(len_of_print):
             print(weak_duplicate[i])
         print('...')
-        results = W.construct_data_frame(rows)
-        results = W.cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
-        W.write_results_pickle(results)
-        W.write_results_csv(results)
-    return results
+    results = W.construct_data_frame(rows)
+    results = W.cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
+    W.write_results_pickle(results)
+    W.write_results_csv(results)
+    # return results
+    return "SUCCESS"
 
 
 if __name__ == "__main__":
