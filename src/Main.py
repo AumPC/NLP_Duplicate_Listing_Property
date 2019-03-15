@@ -8,7 +8,25 @@ QUERY = True
 DEBUG = True
 
 TABLE = "condo_listings_dup"
+EXTRACTED_TABLE = "condo_listings_dup"
 
+
+def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
+    print(len(strong_duplicate), 'strong-duplicate docs')
+    len_of_print = 3 if len(strong_duplicate) > 2 else len(medium_duplicate)
+    for i in range(len_of_print):
+        print(strong_duplicate[i])
+    print('...')
+    print(len(medium_duplicate), 'medium-duplicate docs')
+    len_of_print = 3 if len(medium_duplicate) > 2 else len(medium_duplicate)
+    for i in range(len_of_print):
+        print(medium_duplicate[i])
+    print('...')
+    print(len(weak_duplicate), 'weak-duplicate docs')
+    len_of_print = 3 if len(weak_duplicate) > 2 else len(weak_duplicate)
+    for i in range(len_of_print):
+        print(weak_duplicate[i])
+    print('...')
 
 def update():
     # version 1 : query all, replace to local database all
@@ -29,7 +47,9 @@ def update():
 
 
 def create_update_id(id):
-    return {}
+    # Q.create_table('extracted_table', DEBUG)
+    Q.write_database('extracted_table', [], DEBUG)
+    return ''
 
 
 def delete_id(id):
@@ -37,9 +57,9 @@ def delete_id(id):
 
 
 def check_post(request):
-    # request should be extract at web api, expect id (str) or request body with necessary field (dict)
+    # request should be extract at web api, expect id (int) or request body with necessary field (dict)
     # update system use function update below
-    if type(request) == str:
+    if type(request) == int:
         if DEBUG:
             print("Detect type 'ID', query body from local database")
         query_command = ""  #TODO edit here, query body data if id is given
@@ -59,21 +79,7 @@ def check_post(request):
         print("-- Scoring --")
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_req(request, matrix, parameter)
     if DEBUG:
-        print(len(strong_duplicate), 'strong-duplicate docs')
-        len_of_print = 3 if len(strong_duplicate) > 2 else len(medium_duplicate)
-        for i in range(len_of_print):
-            print(strong_duplicate[i])
-        print('...')
-        print(len(medium_duplicate), 'medium-duplicate docs')
-        len_of_print = 3 if len(medium_duplicate) > 2 else len(medium_duplicate)
-        for i in range(len_of_print):
-            print(medium_duplicate[i])
-        print('...')
-        print(len(weak_duplicate), 'weak-duplicate docs')
-        len_of_print = 3 if len(weak_duplicate) > 2 else len(weak_duplicate)
-        for i in range(len_of_print):
-            print(weak_duplicate[i])
-        print('...')
+        print_group(strong_duplicate, medium_duplicate, weak_duplicate)
     return strong_duplicate, medium_duplicate, weak_duplicate
 
 
@@ -95,21 +101,7 @@ def check_all():
         print("-- Scoring --")
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_all(projects, group_word_matrix, parameter)
     if DEBUG:
-        print(len(strong_duplicate), 'strong-duplicate groups')
-        len_of_print = 3 if len(strong_duplicate) > 2 else len(medium_duplicate)
-        for i in range(len_of_print):
-            print(strong_duplicate[i])
-        print('...')
-        print(len(medium_duplicate), 'medium-duplicate groups')
-        len_of_print = 3 if len(medium_duplicate) > 2 else len(medium_duplicate)
-        for i in range(len_of_print):
-            print(medium_duplicate[i])
-        print('...')
-        print(len(weak_duplicate), 'weak-duplicate groups')
-        len_of_print = 3 if len(weak_duplicate) > 2 else len(weak_duplicate)
-        for i in range(len_of_print):
-            print(weak_duplicate[i])
-        print('...')
+        print_group(strong_duplicate, medium_duplicate, weak_duplicate)
     results = W.construct_data_frame(rows)
     results = W.cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
     W.write_results_pickle(results)

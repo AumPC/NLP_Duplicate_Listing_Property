@@ -3,7 +3,7 @@ import psycopg2.extras
 import json
 import re
 from string import ascii_letters, punctuation, digits, whitespace
-
+import datetime
 
 def query(query_command, is_local, DEBUG):
     param_db = read_json_file('parameter_db.json')
@@ -13,6 +13,8 @@ def query(query_command, is_local, DEBUG):
     rows = cur.fetchall()
     if DEBUG:
         print("The number of data: ", cur.rowcount)
+    cur.close()
+    conn.close()
     listing = []
     if not is_local:
         for row in rows:
@@ -31,6 +33,7 @@ def query(query_command, is_local, DEBUG):
             condo['bathroom'] = row['room_information']['no_of_bath']
             condo['detail'] = normalize_space(filter_special_character(clear_tag(row['detail'])))
             listing.append(condo)
+            print(condo)
     else:
         listing = rows
     return listing
@@ -65,6 +68,70 @@ def filter_special_character(detail):
     return detail
 
 
-def write_database(data):
-    #TODO version 1 : replace data to local database
-    pass
+def create_table(table_name, DEBUG):
+    if DEBUG:
+        print("Creating Table: ", table_name)
+    command = {
+        'extracted_table': """  
+                CREATE TABLE public.condo_listings_extracted
+                (
+                    id integer NOT NULL ,
+                    condo_project_id integer NOT NULL,
+                    title character varying(255) NOT NULL,
+                    price double precision [2] NOT NULL,
+                    size double precision NOT NULL,
+                    tower character varying(255) NOT NULL,
+                    floor character varying(255) NOT NULL,
+                    bedroom integer NOT NULL,
+                    bathroom integer NOT NULL,
+                    detail jsonb NOT NULL,
+                    updated_at timestamp without time zone
+                ) """,
+        'compared_table': """ 
+                CREATE TABLE public.condo_listings_compare_result
+                (
+                    id integer NOT NULL ,
+                    strong_group character varying(255),
+                    medium_group character varying(255),
+                    weak_group character varying(255),
+                    is_core character varying(255),
+                    multiple_row boolean NOT NULL,
+                    not_match boolean NOT NULL,
+                    updated_at timestamp without time zone
+                ) """
+    }
+    param_db = read_json_file('parameter_db.json')
+    conn = psycopg2.connect("dbname=" + param_db['db_name'] + " user=" + param_db['username'] + " password=" + param_db['password'])
+    cur = conn.cursor()
+    cur.execute(command[table_name])
+    cur.close()
+    conn.commit()
+    if conn is not None:
+        conn.close()
+
+
+def write_database(table_name, data, DEBUG):
+    data = {'id': 392858, 'user_id': 107118, 'title': 'ให้เช่า : UNiO Sukhumvit 72 ใกล้ BTS แบริ่ง 1ห้องนอน ห้องใหม่ ทิศเหนือ วิวสระว่ายน้ำ!!!', 'price': [10000.0, 10000.0], 
+            'project': 2764, 'size': 27.0, 'tower': '', 'floor': '3', 'bedroom': '1', 'bathroom': '1', 
+            'detail': json.dumps({})}
+    data['date'] = datetime.datetime.now()
+    if DEBUG:
+        print("Writing Table: ", table_name)
+    command = {
+        'extracted_table': """  
+                INSERT INTO public.condo_listings_extracted (id, condo_project_id, title, price, size, tower, floor, bedroom, bathroom, detail, updated_at)
+                VALUES (%(id)s, %(project)s, %(title)s, %(price)s, %(size)s, %(tower)s, %(floor)s, %(bedroom)s, %(bathroom)s, %(detail)s, %(date)s);
+        """,
+        'compared_table': """ 
+                INSERT INTO public.condo_listings_compare_result (an_int, a_date, another_date, a_string)
+                VALUES (%(int)s, %(date)s, %(date)s, %(str)s);
+        """
+    }
+    param_db = read_json_file('parameter_db.json')
+    conn = psycopg2.connect("dbname=" + param_db['db_name'] + " user=" + param_db['username'] + " password=" + param_db['password'])
+    cur = conn.cursor()
+    cur.execute(command[table_name], data)
+    cur.close()
+    conn.commit()
+    if conn is not None:
+        conn.close()
