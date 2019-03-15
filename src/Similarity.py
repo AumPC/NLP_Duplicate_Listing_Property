@@ -6,6 +6,7 @@ from itertools import combinations
 from copy import deepcopy
 from pythainlp.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
+import src.Query as Q
 
 
 def different_numerical(a, b):
@@ -73,7 +74,7 @@ def group_find(pairs, default_group=None):
     return group
 
 
-def similarity_req(request, matrix, parameter):
+def similarity_post(request, matrix, parameter):
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
@@ -91,16 +92,13 @@ def similarity_req(request, matrix, parameter):
     return strong_duplicate, medium_duplicate, weak_duplicate
 
 
-def similarity_all(projects, group_word_matrix, parameter):
+def similarity_all(projects, parameter):
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
     for project in projects.values():
-        project_id = project[0]['project']
         strong_duplicate_pairs = []
         medium_duplicate_pairs = []
-        for i, doc in enumerate(project):
-            doc['detail'] = group_word_matrix[project_id][i]
         calculated_docs = [(a['id'], b['id'], score_calculate(a, b, parameter['weight'], parameter['half_weight_frequency'])) for a, b in combinations(project, 2)]
         most_confidences = {i['id']: (i['id'], 0) for i in project}
         for a, b, score in calculated_docs:
@@ -123,26 +121,17 @@ def similarity_all(projects, group_word_matrix, parameter):
     return strong_duplicate, medium_duplicate, weak_duplicate
 
 
-def tokenize_new(projects):
-    for project in projects.values():
-        matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
-        for i, doc in enumerate(project):
-            doc['detail'] = matrix[i]
-
-
-def tokenize(projects, DEBUG):
-    group_word_matrix = {}
+def tokenize_all(projects, DEBUG):
     if DEBUG:
         print("Calculate \"group_word_matrix\"")
     for project in projects.values():
-        project_id = project[0]['project']
-        matrix = TfidfVectorizer(tokenizer=word_tokenize).fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
-        group_word_matrix[project_id] = matrix
-    return group_word_matrix
+        vectorizer = TfidfVectorizer(tokenizer=word_tokenize)
+        matrix = vectorizer.fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
+        for i, doc in enumerate(project):
+            doc['detail'] = matrix[i]
+        Q.write_database(vectorizer.get_feature_names()) #TODO if edit write_database
 
 
-def tokenize_request(request, matrix):
-    corpus = [doc['title'] + doc['detail'] for doc in matrix]
-    corpus.append(request[0]['title'] + request[0]['detail'])
-    request[0]['detail'] = TfidfVectorizer(tokenizer=word_tokenize).fit_transform(corpus).toarray()[-1]
-    return request[0]
+def tokenize_post(request, vocabulary):
+    corpus = [request[0]['title'] + request[0]['detail']]
+    request[0]['detail'] = TfidfVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).transform(corpus).toarray()

@@ -9,12 +9,8 @@ def hello_world():
     return 'Hello, World!'
 
 @app.route('/update/<int:id>', methods=['GET'])
-def create_update_id(id):
-    return M.create_update_id(id)
-
-@app.route('/delete/<int:id>', methods=['GET'])
-def delete_id(id):
-    return M.delete_id(id)
+def update_id(id):
+    return M.update(id)
 
 @app.route('/check/<int:id>', methods=['GET'])
 def check_by_id(id):

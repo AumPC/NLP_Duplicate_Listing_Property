@@ -6,7 +6,16 @@ from string import ascii_letters, punctuation, digits, whitespace
 
 
 def query(query_command, is_local, DEBUG):
-    param_db = read_json_file('parameter_db.json')
+    if is_local:
+        param_db = read_json_file('parameter_db.json')
+        conn = psycopg2.connect("dbname=" + param_db['db_name'] + " user=" + param_db['username'] + " password=" + param_db['password'])
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute(query_command)
+        rows = cur.fetchall()
+        if DEBUG:
+            print("The number of data: ", cur.rowcount)
+        return rows
+    param_db = read_json_file('parameter_db.json')#TODO global db param
     conn = psycopg2.connect("dbname=" + param_db['db_name'] + " user=" + param_db['username'] + " password=" + param_db['password'])
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(query_command)
@@ -14,25 +23,22 @@ def query(query_command, is_local, DEBUG):
     if DEBUG:
         print("The number of data: ", cur.rowcount)
     listing = []
-    if not is_local:
-        for row in rows:
-            condo = {'id': row['id'], 'user_id': row['user_id'], 'title': row['title']}
-            if 'max_rental_price' in row['price']['rental'] and row['price']['rental']['max_rental_price']:
-                condo['price'] = [float(row['price']['rental']['min_rental_price']), float(row['price']['rental']['max_rental_price'])]
-            elif row['price']['rental']['min_rental_price']:
-                condo['price'] = [float(row['price']['rental']['min_rental_price']), float(row['price']['rental']['min_rental_price'])]
-            else:
-                condo['price'] = None
-            condo['project'] = row['condo_project_id']
-            condo['size'] = float(row['room_information']['room_area'])
-            condo['tower'] = row['room_information']['building']
-            condo['floor'] = row['room_information']['on_floor']
-            condo['bedroom'] = row['room_information']['no_of_bed']
-            condo['bathroom'] = row['room_information']['no_of_bath']
-            condo['detail'] = normalize_space(filter_special_character(clear_tag(row['detail'])))
-            listing.append(condo)
-    else:
-        listing = rows
+    for row in rows:
+        condo = {'id': row['id'], 'user_id': row['user_id'], 'title': row['title']}
+        if 'max_rental_price' in row['price']['rental'] and row['price']['rental']['max_rental_price']:
+            condo['price'] = [float(row['price']['rental']['min_rental_price']), float(row['price']['rental']['max_rental_price'])]
+        elif row['price']['rental']['min_rental_price']:
+            condo['price'] = [float(row['price']['rental']['min_rental_price']), float(row['price']['rental']['min_rental_price'])]
+        else:
+            condo['price'] = None
+        condo['project'] = row['condo_project_id']
+        condo['size'] = float(row['room_information']['room_area'])
+        condo['tower'] = row['room_information']['building']
+        condo['floor'] = row['room_information']['on_floor']
+        condo['bedroom'] = row['room_information']['no_of_bed']
+        condo['bathroom'] = row['room_information']['no_of_bath']
+        condo['detail'] = normalize_space(filter_special_character(clear_tag(row['detail'])))
+        listing.append(condo)
     return listing
 
 
