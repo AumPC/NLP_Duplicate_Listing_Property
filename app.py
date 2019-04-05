@@ -6,10 +6,10 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
 def hello_world():
-    return 'Hello, World!'
+    return "hello world"
 
 
-@app.route('/clone', method=['POST'])
+@app.route('/clone', methods=['POST'])
 def clone():
     return M.clone()
 
@@ -35,6 +35,5 @@ def check_all():
     return M.check_all()
 
 
-@app.route('/fit', method=['POST'])
-def fit():
-    return M.fit()
+if __name__ == '__main__':
+    app.run('0.0.0.0', 5000)
