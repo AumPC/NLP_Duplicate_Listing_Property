@@ -1,7 +1,7 @@
+from flask.json import jsonify
 import src.Query as Q
 import src.ExtractionFilter as Extr
 import src.Similarity as Sim
-import src.WriteFile as W
 
 
 QUERY = True
@@ -28,59 +28,81 @@ def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
         print(weak_duplicate[i])
     print('...')
 
-def update():
-    # version 1 : query all, replace to local database all
+
+def clone():
     if DEBUG:
         print("-- Query --")
     if QUERY:
-        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"
+        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id DESC"  # TODO query only "parent"
         rows = Q.query(query_command, False, DEBUG)
+        if not rows:
+            return 'ERROR: Renthub database give nothing', 404
     else:
         rows = Q.read_json_file("./data/condo_listings_dup.json")
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction(rows, DEBUG)
+    filter_rows = Extr.extraction(rows, DEBUG)
+    if not filter_rows:
+        return 'ERROR: All row are multiple content or not-matched content', 401
     projects = Extr.group_by_project(filter_rows)
-    Sim.tokenize_new(projects)
-    Q.write_database(projects) #TODO fill this function
-    return {}
+    Sim.tokenize_all(projects, DEBUG)
+    Q.write_database('projects', projects, DEBUG)
+    return 'success'
 
 
-def create_update_id(id):
-    # Q.create_table('extracted_table', DEBUG)
-    Q.write_database('extracted_table', [], DEBUG)
-    return ''
-
-
-def delete_id(id):
-    return {}
+def update(id):
+    if DEBUG:
+        print("-- Query --")
+    if QUERY:
+        query_command = ""  # TODO query this id from global
+        rows = Q.query(query_command, False, DEBUG)
+        if not rows:
+            return 'ERROR: Renthub database give nothing', 404
+    else:
+        rows = Q.read_json_file("./data/condo_listings_dup.json")
+    if DEBUG:
+        print("-- Extraction & Filter --")
+    filter_rows = Extr.extraction(rows, DEBUG)
+    if not filter_rows:
+        return 'ERROR: All row are multiple content or not-matched content', 401
+    Sim.tokenize_post(filter_rows, DEBUG)
+    Q.write_database('projects',filter_rows , DEBUG)
+    return 'success'
 
 
 def check_post(request):
-    # request should be extract at web api, expect id (int) or request body with necessary field (dict)
-    # update system use function update below
-    if type(request) == int:
+    if type(request) == str:
         if DEBUG:
             print("Detect type 'ID', query body from local database")
-        query_command = ""  #TODO edit here, query body data if id is given
-        request = Q.query(query_command, True, DEBUG)[0] #TODO bug if result is none
+        query_command = ""  # TODO edit here, query body data if id is given
+        request = Q.query(query_command, True, DEBUG)
+        if not request:
+            return 'ERROR: Service database give no request body', 404
+    else:
+        request = [request]
     if DEBUG:
         print("-- Query --")
-    parameter = Q.read_json_file("../parameter.json")
-    query_command = "" #TODO edit here, query all row in request's project_id
+    parameter = Q.read_json_file("parameter.json")
+    query_command = ""  # TODO edit here, query all row in request's project_id
     matrix = Q.query(query_command, True, DEBUG)
+    if not request:
+        return 'ERROR: Service database give no matrix', 404
+    query_command = ""  # TODO edit here, query corpus of request's project_id
+    corpus = Q.query(query_command, True, DEBUG)
+    if not request:
+        return 'ERROR: Service database give no corpus', 404
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction([request], DEBUG) # should we extract this?
-    if not filter_rows:
-        return 'error'
-    request = Sim.tokenize_request(filter_rows, matrix) #TODO tfidf config?
+    filter_request = Extr.extraction(request, DEBUG)
+    if not filter_request:
+        return 'ERROR: All row are multiple content or not-matched content', 401
+    Sim.tokenize_post(filter_request, corpus)
     if DEBUG:
         print("-- Scoring --")
-    strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_req(request, matrix, parameter)
+    strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_post(filter_request[0], matrix, parameter)
     if DEBUG:
         print_group(strong_duplicate, medium_duplicate, weak_duplicate)
-    return strong_duplicate, medium_duplicate, weak_duplicate
+    return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate})
 
 
 def check_all():
@@ -88,26 +110,25 @@ def check_all():
         print("-- Query --")
     parameter = Q.read_json_file("parameter.json")
     if QUERY:
-        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"
+        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"  # TODO query only "parent"
         rows = Q.query(query_command, False, DEBUG)
+        if not rows:
+            return 'ERROR: Renthub database give nothing', 404
     else:
         rows = Q.read_json_file("./data/condo_listings_dup.json")
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction(rows, DEBUG)
+    filter_rows = Extr.extraction(rows, DEBUG)
+    if not filter_rows:
+        return 'ERROR: All row are multiple content or not-matched content', 401
     projects = Extr.group_by_project(filter_rows)
-    group_word_matrix = Sim.tokenize(projects, DEBUG)
+    Sim.tokenize_all(projects, DEBUG)
     if DEBUG:
         print("-- Scoring --")
-    strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_all(projects, group_word_matrix, parameter)
+    strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_all(projects, parameter)
     if DEBUG:
         print_group(strong_duplicate, medium_duplicate, weak_duplicate)
-    results = W.construct_data_frame(rows)
-    results = W.cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
-    W.write_results_pickle(results)
-    W.write_results_csv(results)
-    # return results
-    return "SUCCESS"
+    return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate})
 
 
 if __name__ == "__main__":

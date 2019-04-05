@@ -1,31 +1,39 @@
 from flask import Flask
 from flask import request
 import src.Main as M
-import json
 app = Flask(__name__)
+
 
 @app.route('/', methods=['GET'])
 def hello_world():
-    return 'Hello, World!'
+    return "hello world"
 
-@app.route('/update/<int:id>', methods=['GET'])
-def create_update_id(id):
-    return M.create_update_id(id)
 
-@app.route('/delete/<int:id>', methods=['GET'])
-def delete_id(id):
-    return M.delete_id(id)
+@app.route('/clone', methods=['POST'])
+def clone():
+    return M.clone()
 
-@app.route('/check/<int:id>', methods=['GET'])
-def check_by_id(id):
-    return M.check_post(id)
 
-@app.route('/check/request', methods=['GET'])
+@app.route('/update/<int:post_id>', methods=['POST'])
+def update_id(post_id):
+    return M.update(post_id)
+
+
+@app.route('/check/<int:post_id>', methods=['POST'])
+def check_by_id(post_id):
+    return M.check_post(post_id)
+
+
+@app.route('/check/request', methods=['POST'])
 def check_by_req():
-    data =  request.get_json()
+    data = request.get_json()  # TODO check if data has ALL required field
     return M.check_post(data)
 
-@app.route('/check/all', methods=['GET'])
+
+@app.route('/check/all', methods=['POST'])
 def check_all():
     return M.check_all()
 
+
+if __name__ == '__main__':
+    app.run('0.0.0.0', 5000)
