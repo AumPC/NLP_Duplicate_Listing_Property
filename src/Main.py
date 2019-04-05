@@ -1,8 +1,8 @@
+import os
 import src.Query as Q
 import src.ExtractionFilter as Extr
 import src.Similarity as Sim
 import src.WriteFile as W
-
 
 QUERY = True
 DEBUG = True
@@ -60,24 +60,30 @@ def check_post(request):
     # request should be extract at web api, expect id (int) or request body with necessary field (dict)
     # update system use function update below
     if type(request) == int:
+        # query body from post id
+        post_id = request
         if DEBUG:
             print("Detect type 'ID', query body from local database")
-        query_command = ""  #TODO edit here, query body data if id is given
-        request = Q.query(query_command, True, DEBUG)[0] #TODO bug if result is none
+        query_command = "SELECT * FROM " + TABLE + " WHERE id=" + str(post_id)  #TODO edit here, query body data if id is given
+        body = Q.query(query_command, False, DEBUG)[0] #TODO bug if result is none, Should be True when deploy
     if DEBUG:
         print("-- Query --")
-    parameter = Q.read_json_file("../parameter.json")
-    query_command = "" #TODO edit here, query all row in request's project_id
-    matrix = Q.query(query_command, True, DEBUG)
+    file_dir = os.path.dirname(os.path.realpath('__file__'))
+    rel_path = "parameter.json"
+    parameter = Q.read_json_file(os.path.join(file_dir, rel_path))
+    project_id = body['project']
+    print(project_id)
+    query_command = "SELECT * FROM " + TABLE + " WHERE condo_project_id=" + str(project_id)
+    matrix = Q.query(query_command, False, DEBUG) # Should be True
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction([request], DEBUG) # should we extract this?
+    filter_rows, multiple_row, check_floor_row, not_match_row, not_found = Extr.extraction([body], DEBUG) # should we extract this?
     if not filter_rows:
         return 'error'
-    request = Sim.tokenize_request(filter_rows, matrix) #TODO tfidf config?
+    tokenized = Sim.tokenize_request(filter_rows, matrix) #TODO tfidf config?
     if DEBUG:
         print("-- Scoring --")
-    strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_req(request, matrix, parameter)
+    strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_req(tokenized, matrix, parameter)
     if DEBUG:
         print_group(strong_duplicate, medium_duplicate, weak_duplicate)
     return strong_duplicate, medium_duplicate, weak_duplicate

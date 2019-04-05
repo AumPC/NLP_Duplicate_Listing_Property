@@ -33,9 +33,8 @@ def query(query_command, is_local, DEBUG):
             condo['bathroom'] = row['room_information']['no_of_bath']
             condo['detail'] = normalize_space(filter_special_character(clear_tag(row['detail'])))
             listing.append(condo)
-            print(condo)
     else:
-        listing = rows
+        listing = rows # TODO Logic
     return listing
 
 
