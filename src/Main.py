@@ -1,7 +1,6 @@
 import src.Query as Q
 import src.ExtractionFilter as Extr
 import src.Similarity as Sim
-import src.WriteFile as W
 
 
 QUERY = True
@@ -27,6 +26,27 @@ def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
     for i in range(len_of_print):
         print(weak_duplicate[i])
     print('...')
+
+
+def clone():
+    if DEBUG:
+        print("-- Query --")
+    if QUERY:
+        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"
+        rows = Q.query(query_command, False, DEBUG)
+        if not rows:
+            return 'error'  # TODO ask protocol with flask
+    else:
+        rows = Q.read_json_file("./data/condo_listings_dup.json")
+    if DEBUG:
+        print("-- Extraction & Filter --")
+    filter_rows = Extr.extraction(rows, DEBUG)
+    if not filter_rows:
+        return 'error'  # TODO ask protocol with flask
+    projects = Extr.group_by_project(filter_rows)
+    Sim.tokenize_all(projects, DEBUG)
+    Q.write_database('projects', projects, DEBUG)
+    return {}  # TODO OK signal
 
 
 def update(id):

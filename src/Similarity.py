@@ -129,7 +129,7 @@ def tokenize_all(projects, DEBUG):
         matrix = vectorizer.fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
         for i, doc in enumerate(project):
             doc['detail'] = matrix[i]
-        Q.write_database(vectorizer.get_feature_names()) #TODO if edit write_database
+        Q.write_database('corpus', {'corpus': vectorizer.get_feature_names()}, DEBUG)
 
 
 def tokenize_post(request, vocabulary):

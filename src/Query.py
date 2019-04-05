@@ -86,8 +86,8 @@ def create_table(table_name, DEBUG):
     if DEBUG:
         print("Creating Table: ", table_name)
     command = {
-        'extracted_table': """  
-                CREATE TABLE public.condo_listings_extracted
+        'projects': """  
+                CREATE TABLE public.projects
                 (
                     id integer NOT NULL ,
                     condo_project_id integer NOT NULL,
@@ -99,10 +99,10 @@ def create_table(table_name, DEBUG):
                     bedroom integer NOT NULL,
                     bathroom integer NOT NULL,
                     detail jsonb NOT NULL,
-                    updated_at timestamp without time zone
+                    updated_at timestamp without time zone DEFAULT NOW() ON UPDATE NOW()
                 ) """,
-        'compared_table': """ 
-                CREATE TABLE public.condo_listings_compare_result
+        'corpus': """ 
+                CREATE TABLE public.corpus
                 (
                     id integer NOT NULL ,
                     strong_group character varying(255),
@@ -133,21 +133,24 @@ def write_database(table_name, data, DEBUG):
     if DEBUG:
         print("Writing Table: ", table_name)
     command = {
-        'extracted_table': """  
-                INSERT INTO public.condo_listings_extracted (id, condo_project_id, title, price, size, tower, floor, bedroom, bathroom, detail, updated_at)
-                VALUES (%(id)s, %(project)s, %(title)s, %(price)s, %(size)s, %(tower)s, %(floor)s, %(bedroom)s, %(bathroom)s, %(detail)s, %(date)s);
+        'projects': """  
+                INSERT INTO public.projects (id, condo_project_id, title, price, size, tower, floor, bedroom, bathroom, detail)
+                VALUES (%(id)s, %(project)s, %(title)s, %(price)s, %(size)s, %(tower)s, %(floor)s, %(bedroom)s, %(bathroom)s, %(detail)s;
         """,
-        'compared_table': """ 
-                INSERT INTO public.condo_listings_compare_result (an_int, a_date, another_date, a_string)
-                VALUES (%(int)s, %(date)s, %(date)s, %(str)s);
+        'corpus': """ 
+                INSERT INTO public.corpus (condo_project_id, corpus)
+                VALUES (%(condo_project_id)s, %(corpus)s;
         """
     }
     param_db = read_json_file('parameter_db.json')
     conn = psycopg2.connect(
         "dbname=" + param_db['db_name'] + " user=" + param_db['username'] + " password=" + param_db['password'])
     cur = conn.cursor()
-    cur.execute(command[table_name], data)
+    if table_name == 'projects':
+        for project in data.values():
+            cur.execute(command[table_name], project)
+    if table_name == 'corpus':
+        cur.execute(command[table_name], data)
     cur.close()
     conn.commit()
-    if conn is not None:
-        conn.close()
+    conn.close()
