@@ -32,7 +32,7 @@ def clone():
     if DEBUG:
         print("-- Query --")
     if QUERY:
-        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"
+        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"  # TODO query only "parent"
         rows = Q.query(query_command, False, DEBUG)
         if not rows:
             return 'error'  # TODO ask protocol with flask
@@ -53,7 +53,7 @@ def update(id):
     if DEBUG:
         print("-- Query --")
     if QUERY:
-        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"  # TODO query only updated row
+        query_command = ""  # TODO query this id from global
         rows = Q.query(query_command, False, DEBUG)
         if not rows:
             return 'error'  # TODO ask protocol with flask
@@ -64,15 +64,12 @@ def update(id):
     filter_rows = Extr.extraction(rows, DEBUG)
     if not filter_rows:
         return 'error'  # TODO ask protocol with flask
-    projects = Extr.group_by_project(filter_rows)
-    Sim.tokenize_all(projects, DEBUG)
-    Q.write_database(projects, DEBUG)  # TODO fill this function
+    Sim.tokenize_post(filter_rows, DEBUG)
+    Q.write_database('projects',filter_rows , DEBUG)
     return {}  # TODO OK signal
 
 
 def check_post(request):
-    # request should be extract at web api, expect id (str) or request body with necessary field (dict)
-    # update system use function update before
     if type(request) == str:
         if DEBUG:
             print("Detect type 'ID', query body from local database")
@@ -87,14 +84,14 @@ def check_post(request):
     parameter = Q.read_json_file("parameter.json")
     query_command = ""  # TODO edit here, query all row in request's project_id
     matrix = Q.query(query_command, True, DEBUG)
-    query_command = ""  # TODO edit here, query vocab set of request's project_id
-    vocabulary = Q.query(query_command, True, DEBUG)
+    query_command = ""  # TODO edit here, query corpus of request's project_id
+    corpus = Q.query(query_command, True, DEBUG)
     if DEBUG:
         print("-- Extraction & Filter --")
     filter_request = Extr.extraction(request, DEBUG)
     if not filter_request:
         return 'error'  # TODO ask protocol with flask
-    Sim.tokenize_post(filter_request, vocabulary)
+    Sim.tokenize_post(filter_request, corpus)
     if DEBUG:
         print("-- Scoring --")
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_post(filter_request[0], matrix, parameter)
@@ -108,7 +105,7 @@ def check_all():
         print("-- Query --")
     parameter = Q.read_json_file("parameter.json")
     if QUERY:
-        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"
+        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"  # TODO query only "parent"
         rows = Q.query(query_command, False, DEBUG)
     else:
         rows = Q.read_json_file("./data/condo_listings_dup.json")
@@ -126,8 +123,12 @@ def check_all():
     # results = W.cal_results(results, strong_duplicate, medium_duplicate, weak_duplicate)
     # W.write_results_pickle(results)
     # W.write_results_csv(results)
-    # TODO replace result to local database
+    # TODO return result
     return "SUCCESS"
+
+
+def fit():
+    return
 
 
 if __name__ == "__main__":

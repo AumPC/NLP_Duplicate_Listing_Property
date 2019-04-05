@@ -82,7 +82,7 @@ def filter_special_character(detail):
     return detail
 
 
-def create_table(table_name, DEBUG):
+def create_table(table_name, cur, DEBUG):
     if DEBUG:
         print("Creating Table: ", table_name)
     command = {
@@ -104,34 +104,19 @@ def create_table(table_name, DEBUG):
         'corpus': """ 
                 CREATE TABLE public.corpus
                 (
-                    id integer NOT NULL ,
-                    strong_group character varying(255),
-                    medium_group character varying(255),
-                    weak_group character varying(255),
-                    is_core character varying(255),
-                    multiple_row boolean NOT NULL,
-                    not_match boolean NOT NULL,
-                    updated_at timestamp without time zone
-                ) """
+                    condo_project_id integer NOT NULL ,
+                    corpus array
+                ) """  # TODO test create with array type
     }
-    param_db = read_json_file('parameter_db.json')
-    conn = psycopg2.connect(
-        "dbname=" + param_db['db_name'] + " user=" + param_db['username'] + " password=" + param_db['password'])
-    cur = conn.cursor()
     cur.execute(command[table_name])
-    cur.close()
-    conn.commit()
-    if conn is not None:
-        conn.close()
 
 
-def write_database(table_name, data, DEBUG):
+def write_database(table_name, data, DEBUG):  # TODO upsert
     data = {'id': 392858, 'user_id': 107118,
             'title': 'ให้เช่า : UNiO Sukhumvit 72 ใกล้ BTS แบริ่ง 1ห้องนอน ห้องใหม่ ทิศเหนือ วิวสระว่ายน้ำ!!!',
             'price': [10000.0, 10000.0], 'project': 2764, 'size': 27.0, 'tower': '', 'floor': '3', 'bedroom': '1',
             'bathroom': '1', 'detail': json.dumps({}), 'date': datetime.datetime.now()}
-    if DEBUG:
-        print("Writing Table: ", table_name)
+    check_command = ""  # TODO check if table is exist
     command = {
         'projects': """  
                 INSERT INTO public.projects (id, condo_project_id, title, price, size, tower, floor, bedroom, bathroom, detail)
@@ -143,9 +128,14 @@ def write_database(table_name, data, DEBUG):
         """
     }
     param_db = read_json_file('parameter_db.json')
+    if DEBUG:
+        print("Writing : ", table_name)
     conn = psycopg2.connect(
         "dbname=" + param_db['db_name'] + " user=" + param_db['username'] + " password=" + param_db['password'])
     cur = conn.cursor()
+    cur.execute(check_command)
+    if not cur.fetchall():
+        create_table(table_name, cur, DEBUG)
     if table_name == 'projects':
         for project in data.values():
             cur.execute(command[table_name], project)

@@ -26,10 +26,15 @@ def check_by_id(post_id):
 
 @app.route('/check/request', methods=['POST'])
 def check_by_req():
-    data = request.get_json()
+    data = request.get_json()  # TODO check if data has ALL required field
     return M.check_post(data)
 
 
 @app.route('/check/all', methods=['POST'])
 def check_all():
     return M.check_all()
+
+
+@app.route('/fit', method=['POST'])
+def fit():
+    return M.fit()
