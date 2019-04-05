@@ -72,7 +72,7 @@ def extraction_size_before(detail, keyword):
                 if point < 0:
                     break
             ext_size_arr += re.split('[ /,]', size[i][point+1:])
-    ext_size_arr = [float(ext_size) for ext_size in ext_size_arr if ext_size and ext_size[0] != '.' and ext_size[-1] != '.' ]
+    ext_size_arr = [float(ext_size) for ext_size in ext_size_arr if ext_size and ext_size[0] != '.' and ext_size[-1] != '.']
     return ext_size_arr
 
 
@@ -89,7 +89,7 @@ def extraction_size_after(detail, keyword):
                 if point >= len(size[i+1]):
                     break
             ext_size_arr += re.split('[ /,]', size[i+1][0:point])
-    ext_size_arr = [float(ext_size) for ext_size in ext_size_arr if ext_size and ext_size[0] != '.' and ext_size[-1] != '.' ]
+    ext_size_arr = [float(ext_size) for ext_size in ext_size_arr if ext_size and ext_size[0] != '.' and ext_size[-1] != '.']
     return ext_size_arr
 
 

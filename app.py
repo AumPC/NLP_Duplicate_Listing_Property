@@ -26,7 +26,13 @@ def check_by_id(post_id):
 
 @app.route('/check/request', methods=['POST'])
 def check_by_req():
-    data = request.get_json()  # TODO check if data has ALL required field
+    data = request.get_json()
+    if type(data) == dict:
+        return 'ERROR: invalid data type', 401
+    require_fields = ['id', 'condo_project_id', 'title', 'price', 'size', 'tower', 'floor', 'bedroom', 'bathroom', 'detail']
+    for field in require_fields:
+        if field not in data:
+            return f'ERROR: {field} is not found', 401
     return M.check_post(data)
 
 

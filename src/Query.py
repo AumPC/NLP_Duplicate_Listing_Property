@@ -9,8 +9,7 @@ import datetime
 def query(query_command, is_local, DEBUG):
     if is_local:
         param_db = read_json_file('parameter_db.json')
-        conn = psycopg2.connect(
-            "dbname=" + param_db['db_name'] + " user=" + param_db['username'] + " password=" + param_db['password'])
+        conn = psycopg2.connect(f"dbname={param_db['db_name']} user= {param_db['username']} password= {param_db['password']}")
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cur.execute(query_command)
         rows = cur.fetchall()
@@ -18,8 +17,7 @@ def query(query_command, is_local, DEBUG):
             print("The number of data: ", cur.rowcount)
         return rows
     param_db = read_json_file('parameter_db.json')  # TODO global db param
-    conn = psycopg2.connect(
-        "dbname=" + param_db['db_name'] + " user=" + param_db['username'] + " password=" + param_db['password'])
+    conn = psycopg2.connect(f"dbname={param_db['db_name']} user= {param_db['username']} password= {param_db['password']}")
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(query_command)
     rows = cur.fetchall()
@@ -30,7 +28,7 @@ def query(query_command, is_local, DEBUG):
     listing = []
     if not is_local:
         for row in rows:
-            condo = {'id': row['id'], 'user_id': row['user_id'], 'title': row['title']}
+            condo = {'id': row['id'], 'title': row['title']}
             if 'max_rental_price' in row['price']['rental'] and row['price']['rental']['max_rental_price']:
                 condo['price'] = [float(row['price']['rental']['min_rental_price']),
                                   float(row['price']['rental']['max_rental_price'])]
@@ -47,7 +45,8 @@ def query(query_command, is_local, DEBUG):
             condo['bathroom'] = row['room_information']['no_of_bath']
             condo['detail'] = normalize_space(filter_special_character(clear_tag(row['detail'])))
             listing.append(condo)
-            print(condo)
+            if DEBUG:
+                print(condo)
     else:
         listing = rows
     return listing
@@ -130,8 +129,7 @@ def write_database(table_name, data, DEBUG):  # TODO upsert
     param_db = read_json_file('parameter_db.json')
     if DEBUG:
         print("Writing : ", table_name)
-    conn = psycopg2.connect(
-        "dbname=" + param_db['db_name'] + " user=" + param_db['username'] + " password=" + param_db['password'])
+    conn = psycopg2.connect(f"dbname={param_db['db_name']} user= {param_db['username']} password= {param_db['password']}")
     cur = conn.cursor()
     cur.execute(check_command)
     if not cur.fetchall():
