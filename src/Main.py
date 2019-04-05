@@ -73,7 +73,7 @@ def check_post(request):
     parameter = Q.read_json_file(os.path.join(file_dir, rel_path))
     project_id = body['project']
     print(project_id)
-    query_command = "SELECT * FROM " + TABLE + " WHERE condo_project_id=" + str(project_id)
+    query_command = "SELECT * FROM " + TABLE + " WHERE condo_project_id=" + str(project_id) + "order by user_id DESC"
     matrix = Q.query(query_command, False, DEBUG) # Should be True
     if DEBUG:
         print("-- Extraction & Filter --")
@@ -81,6 +81,7 @@ def check_post(request):
     if not filter_rows:
         return 'error'
     tokenized = Sim.tokenize_request(filter_rows, matrix) #TODO tfidf config?
+    # matrix = Sim.tokenize(matrix, DEBUG)
     if DEBUG:
         print("-- Scoring --")
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_req(tokenized, matrix, parameter)
