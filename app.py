@@ -9,7 +9,7 @@ def hello_world():
     return 'Hello, World!'
 
 
-@app.route('/clone', method=['POST'])
+@app.route('/clone', methods=['POST'])
 def clone():
     return M.clone()
 
@@ -35,6 +35,6 @@ def check_all():
     return M.check_all()
 
 
-@app.route('/fit', method=['POST'])
+@app.route('/fit', methods=['POST'])
 def fit():
     return M.fit()

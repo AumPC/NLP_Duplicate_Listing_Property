@@ -32,7 +32,7 @@ def clone():
     if DEBUG:
         print("-- Query --")
     if QUERY:
-        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"  # TODO query only "parent"
+        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC LIMIT 2"  # TODO query only "parent"
         rows = Q.query(query_command, False, DEBUG)
         if not rows:
             return 'error'  # TODO ask protocol with flask
@@ -46,7 +46,8 @@ def clone():
     projects = Extr.group_by_project(filter_rows)
     Sim.tokenize_all(projects, DEBUG)
     Q.write_database('projects', projects, DEBUG)
-    return {}  # TODO OK signal
+    # return {}  # TODO OK signal
+    return "S"
 
 
 def update(id):
