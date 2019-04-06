@@ -35,6 +35,7 @@ def clone():
         print("-- Query --")
     if QUERY:
         query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NOT NULL ORDER BY condo_project_id DESC"  # TODO query only "parent"
+
         rows = Q.query(query_command, False, DEBUG)
         if not rows:
             return 'ERROR: Renthub database give nothing', 404
