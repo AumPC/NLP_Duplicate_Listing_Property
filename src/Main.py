@@ -113,7 +113,7 @@ def check_all():
         print("-- Query --")
     parameter = Q.read_json_file("parameter.json")
     if QUERY:
-        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NOT NULL ORDER BY condo_project_id DESC"  # TODO query only "parent"
+        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO query only "parent"
         rows = Q.query(query_command, False, DEBUG)
         if not rows:
             return 'ERROR: Renthub database give nothing', 404
