@@ -124,12 +124,17 @@ def similarity_all(projects, parameter):
 def tokenize_all(projects, DEBUG):
     if DEBUG:
         print("Calculate \"group_word_matrix\"")
+    corpus = []
     for project in projects.values():
         vectorizer = TfidfVectorizer(tokenizer=word_tokenize)
         matrix = vectorizer.fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
         for i, doc in enumerate(project):
             doc['detail'] = matrix[i]
-        Q.write_database('corpus', {'condo_project_id': project[0]['project'], 'corpus': vectorizer.get_feature_names()}, DEBUG)
+        if project[0]['project'] is not None:
+            corpus.append({'id': project[0]['project'], 'condo_project_id': project[0]['project'], 'corpus': vectorizer.get_feature_names()})
+        else:
+            corpus.append({'id': 0, 'condo_project_id': None, 'corpus': vectorizer.get_feature_names()})
+    Q.write_database('corpus', corpus, DEBUG)
 
 
 def tokenize_post(request, vocabulary):

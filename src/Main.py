@@ -7,8 +7,9 @@ import src.Similarity as Sim
 QUERY = True
 DEBUG = True
 
-TABLE = "condo_listings_dup"
-EXTRACTED_TABLE = "condo_listings_dup"
+
+JSON_FILE = "./data/condo_listings_dup.json"
+GLOBAL_TABLE = "condo_listings_sample"
 
 
 def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
@@ -33,12 +34,12 @@ def clone():
     if DEBUG:
         print("-- Query --")
     if QUERY:
-        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id"  # TODO query only "parent"
+        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO query only "parent"
         rows = Q.query(query_command, False, DEBUG)
         if not rows:
             return 'ERROR: Renthub database give nothing', 404
     else:
-        rows = Q.read_json_file("./data/condo_listings_dup.json")
+        rows = Q.read_json_file(JSON_FILE)
     if DEBUG:
         print("-- Extraction & Filter --")
     filter_rows = Extr.extraction(rows, DEBUG)
@@ -50,23 +51,23 @@ def clone():
     return 'success'
 
 
-def update(id):
+def update(update_id):
     if DEBUG:
         print("-- Query --")
     if QUERY:
-        query_command = ""  # TODO query this id from global
+        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE id = {update_id}"  # TODO query this id from global
         rows = Q.query(query_command, False, DEBUG)
         if not rows:
             return 'ERROR: Renthub database give nothing', 404
     else:
-        rows = Q.read_json_file("./data/condo_listings_dup.json")
+        rows = Q.read_json_file(JSON_FILE)
     if DEBUG:
         print("-- Extraction & Filter --")
     filter_rows = Extr.extraction(rows, DEBUG)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
     Sim.tokenize_post(filter_rows, DEBUG)
-    Q.write_database('projects',filter_rows , DEBUG)
+    Q.write_database('projects', filter_rows, DEBUG)
     return 'success'
 
 
@@ -74,7 +75,7 @@ def check_post(request):
     if type(request) == str:
         if DEBUG:
             print("Detect type 'ID', query body from local database")
-        query_command = ""  # TODO edit here, query body data if id is given
+        query_command = f"SELECT * FROM public.projects WHERE id = {request}"  # TODO edit here, query body data if id is given
         request = Q.query(query_command, True, DEBUG)
         if not request:
             return 'ERROR: Service database give no request body', 404
@@ -83,14 +84,16 @@ def check_post(request):
     if DEBUG:
         print("-- Query --")
     parameter = Q.read_json_file("parameter.json")
-    query_command = ""  # TODO edit here, query all row in request's project_id
+    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE condo_project_id = {request[0]['condo_project_id']}"  # TODO edit here, query all row in request's project_id
     matrix = Q.query(query_command, True, DEBUG)
-    if not request:
+    if not matrix:
         return 'ERROR: Service database give no matrix', 404
-    query_command = ""  # TODO edit here, query corpus of request's project_id
+    query_command = f"SELECT corpus FROM public.corpus WHERE condo_project_id = {request[0]['condo_project_id']}"  # TODO edit here, query corpus of request's project_id
     corpus = Q.query(query_command, True, DEBUG)
-    if not request:
+    if not corpus:
         return 'ERROR: Service database give no corpus', 404
+    else:
+        corpus = corpus[0]['corpus']
     if DEBUG:
         print("-- Extraction & Filter --")
     filter_request = Extr.extraction(request, DEBUG)
@@ -110,12 +113,12 @@ def check_all():
         print("-- Query --")
     parameter = Q.read_json_file("parameter.json")
     if QUERY:
-        query_command = "SELECT * FROM " + TABLE + " order by condo_project_id, user_id DESC"  # TODO query only "parent"
+        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NOT NULL ORDER BY condo_project_id DESC"  # TODO query only "parent"
         rows = Q.query(query_command, False, DEBUG)
         if not rows:
             return 'ERROR: Renthub database give nothing', 404
     else:
-        rows = Q.read_json_file("./data/condo_listings_dup.json")
+        rows = Q.read_json_file(JSON_FILE)
     if DEBUG:
         print("-- Extraction & Filter --")
     filter_rows = Extr.extraction(rows, DEBUG)
