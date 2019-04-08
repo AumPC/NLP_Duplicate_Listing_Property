@@ -41,5 +41,18 @@ def check_all():
     return M.check_all()
 
 
+@app.route('/parameter', methods=['GET'])
+def get_parameter():
+    return M.get_parameter()
+
+
+@app.route('/parameter', methods=['POST'])
+def set_parameter():
+    data = request.get_json()
+    if type(data) == dict:
+        return 'ERROR: invalid data type', 401
+    return M.set_parameter(data)
+
+
 if __name__ == '__main__':
     app.run('0.0.0.0', 5000)
