@@ -7,6 +7,8 @@ from copy import deepcopy
 from pythainlp.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 import src.Query as Q
+import src.WriteFile as W
+import numpy
 
 
 def different_numerical(a, b):
@@ -96,17 +98,23 @@ def similarity_all(projects, parameter):
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
-    for project in projects.values():
+    most_confidences = {}
+    threshold_check = []
+    for project_id, project in projects.items():
+        calculated_docs = [(a['id'], b['id'], a['threshold_check'], b['threshold_check'], score_calculate(a, b, parameter['weight'], parameter['half_weight_frequency'])) for a, b in combinations(project, 2)]
+        most_confidences[project_id] = {i['id']: (i['id'], 0) for i in project}
+        for a, b, threshold_check_a, threshold_check_b, score in calculated_docs:
+            if most_confidences[project_id][a][1] < score:
+                most_confidences[project_id][a] = (b, score)
+            if most_confidences[project_id][b][1] < score:
+                most_confidences[project_id][b] = (a, score)
+            threshold_check.append((score, threshold_check_a, threshold_check_b))
+    if parameter['auto_threshold'] == 'True':
+        threshold_calculate(threshold_check, parameter)
+    for project_id in projects:
         strong_duplicate_pairs = []
         medium_duplicate_pairs = []
-        calculated_docs = [(a['id'], b['id'], score_calculate(a, b, parameter['weight'], parameter['half_weight_frequency'])) for a, b in combinations(project, 2)]
-        most_confidences = {i['id']: (i['id'], 0) for i in project}
-        for a, b, score in calculated_docs:
-            if most_confidences[a][1] < score:
-                most_confidences[a] = (b, score)
-            if most_confidences[b][1] < score:
-                most_confidences[b] = (a, score)
-        for doc, most_confidence in most_confidences.items():
+        for doc, most_confidence in most_confidences[project_id].items():
             if most_confidence[1] >= parameter['hard_threshold']:
                 strong_duplicate_pairs.append((doc, most_confidence[0]))
             elif most_confidence[1] >= parameter['soft_threshold']:
@@ -129,6 +137,7 @@ def tokenize_all(projects, DEBUG):
         vectorizer = TfidfVectorizer(tokenizer=word_tokenize)
         matrix = vectorizer.fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
         for i, doc in enumerate(project):
+            doc['threshold_check'] = doc['title'] + doc['detail'][:100] if len(doc['detail']) > 100 else doc['title'] + doc['detail']
             doc['detail'] = matrix[i]
         if project[0]['project'] is not None:
             corpus.append({'id': project[0]['project'], 'condo_project_id': project[0]['project'], 'corpus': vectorizer.get_feature_names()})
@@ -140,3 +149,29 @@ def tokenize_all(projects, DEBUG):
 def tokenize_post(request, vocabulary):
     corpus = [request[0]['title'] + request[0]['detail']]
     request[0]['detail'] = TfidfVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).transform(corpus).toarray()
+
+
+def threshold_calculate(pairs, parameter):
+    duplicate_pairs = []
+    strong_threshold = 0
+    previous_difference = 0
+    for pair in pairs:
+        if pair[1] == pair[2]:
+            duplicate_pairs.append(pair[0])
+        elif pair[0] > strong_threshold:
+            strong_threshold = pair[0]
+    parameter['hard_threshold'] = strong_threshold
+    duplicate_range_count = [0] * parameter['data_range']
+    for score in duplicate_pairs:
+        i = parameter['data_range'] - 1
+        while i / parameter['data_range'] > score:
+            i -= 1
+        duplicate_range_count[parameter['data_range'] - i - 1] += 1
+    for i in range(len(duplicate_range_count) - 1):
+        difference = duplicate_range_count[i] - duplicate_range_count[i + 1]
+        if previous_difference > difference:
+            parameter['soft_threshold'] = (parameter['data_range'] - i - 0.5) / parameter['data_range']
+            break
+        previous_difference = difference
+    parameter['min_confidence'] = numpy.percentile(duplicate_pairs, parameter['tail_percentile'])
+    W.save_to_file(parameter, 'parameter.json')

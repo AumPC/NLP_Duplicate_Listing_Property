@@ -2,6 +2,7 @@ from flask.json import jsonify
 import src.Query as Q
 import src.ExtractionFilter as Extr
 import src.Similarity as Sim
+import src.WriteFile as W
 
 
 QUERY = True
@@ -113,7 +114,7 @@ def check_all():
         print("-- Query --")
     parameter = Q.read_json_file("parameter.json")
     if QUERY:
-        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NOT NULL ORDER BY condo_project_id DESC"  # TODO query only "parent"
+        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO query only "parent"
         rows = Q.query(query_command, False, DEBUG)
         if not rows:
             return 'ERROR: Renthub database give nothing', 404
@@ -132,6 +133,27 @@ def check_all():
     if DEBUG:
         print_group(strong_duplicate, medium_duplicate, weak_duplicate)
     return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate})
+
+
+def get_parameter():
+    return jsonify(Q.read_json_file("parameter.json"))
+
+
+def set_parameter(data):
+    parameter = Q.read_json_file("parameter.json")
+    for field in data:
+        if field == 'weight':
+            for weight in data[field]:
+                if weight in parameter[field] and type(parameter[field][weight]) == type(data[field][weight]):
+                    parameter[field][weight] = data[field][weight]
+                else:
+                    return 'ERROR: invalid data type', 401
+        elif field in parameter and type(parameter[field]) == type(data[field]):
+            parameter[field] = data[field]
+        else:
+            return 'ERROR: invalid data type', 401
+    W.save_to_file(parameter, 'parameter.json')
+    return 'success'
 
 
 if __name__ == "__main__":

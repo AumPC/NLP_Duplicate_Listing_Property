@@ -1,14 +1,17 @@
 {
-  "weight": {
-    "price": 0.35,
-    "size": 0.1,
-    "tower": 0.15,
-    "floor": 0.2,
-    "bedroom": 0.1,
-    "bathroom": 0.1
-  },
-  "half_weight_frequency": 9,
-  "min_confidence": 0.78,
-  "hard_threshold": 0.98,
-  "soft_threshold": 0.85
+    "auto_threshold": "True",
+    "data_range": 20,
+    "half_weight_frequency": 9,
+    "hard_threshold": 1.0,
+    "min_confidence": 0.7226303250859771,
+    "soft_threshold": 0.925,
+    "tail_percentile": 1,
+    "weight": {
+        "bathroom": 0.1,
+        "bedroom": 0.1,
+        "floor": 0.2,
+        "price": 0.35,
+        "size": 0.1,
+        "tower": 0.15
+    }
 }
