@@ -274,7 +274,7 @@ def extraction(rows, DEBUG):
         print("Multiple Context", len(multiple_row), 'items')
         print("Floor Multiple Context", len(check_floor_row), 'items')
         print("Not Match Context", len(not_match_row), 'items')
-    return filter_rows
+    return filter_rows, multiple_row, not_match_row
 
 
 def group_by_project(rows):

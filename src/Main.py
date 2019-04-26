@@ -43,13 +43,13 @@ def clone():
         rows = Q.read_json_file(JSON_FILE)
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows = Extr.extraction(rows, DEBUG)
+    filter_rows, multiple_rows, mismatch_rows = Extr.extraction(rows, DEBUG)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
     projects = Extr.group_by_project(filter_rows)
     Sim.tokenize_all(projects, DEBUG)
     Q.write_database('projects', projects, DEBUG)
-    return 'success'
+    return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
 
 def update(update_id):
@@ -64,12 +64,12 @@ def update(update_id):
         rows = Q.read_json_file(JSON_FILE)
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows = Extr.extraction(rows, DEBUG)
+    filter_rows, multiple_rows, mismatch_rows = Extr.extraction(rows, DEBUG)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
     Sim.tokenize_post(filter_rows, DEBUG)
     Q.write_database('projects', filter_rows, DEBUG)
-    return 'success'
+    return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
 
 def check_post(request):
@@ -97,7 +97,7 @@ def check_post(request):
         corpus = corpus[0]['corpus']
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_request = Extr.extraction(request, DEBUG)
+    filter_request, multiple_rows, mismatch_rows = Extr.extraction(request, DEBUG)
     if not filter_request:
         return 'ERROR: All row are multiple content or not-matched content', 401
     Sim.tokenize_post(filter_request, corpus)
@@ -106,7 +106,7 @@ def check_post(request):
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_post(filter_request[0], matrix, parameter)
     if DEBUG:
         print_group(strong_duplicate, medium_duplicate, weak_duplicate)
-    return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate})
+    return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
 
 def check_all():
@@ -122,7 +122,7 @@ def check_all():
         rows = Q.read_json_file(JSON_FILE)
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows = Extr.extraction(rows, DEBUG)
+    filter_rows, multiple_rows, mismatch_rows = Extr.extraction(rows, DEBUG)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
     projects = Extr.group_by_project(filter_rows)
@@ -132,7 +132,7 @@ def check_all():
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_all(projects, parameter)
     if DEBUG:
         print_group(strong_duplicate, medium_duplicate, weak_duplicate)
-    return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate})
+    return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
 
 def get_parameter():
