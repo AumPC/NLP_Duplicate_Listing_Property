@@ -1,8 +1,8 @@
 *__pycache__
-/data
 /cached
 /.idea
 .vscode
-parameter_db.json
+parameter_nlp_db.json
+parameter_main_db.json
 /results
 /env

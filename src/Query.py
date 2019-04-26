@@ -5,49 +5,44 @@ import re
 from string import ascii_letters, punctuation, digits, whitespace
 
 
-def query(query_command, is_local, DEBUG):
+def query(query_command, is_local, debug):
     if is_local:
-        param_db = read_json_file('parameter_db.json')
+        param_db = read_json_file('parameter_nlp_db.json')
         conn = psycopg2.connect(f"dbname={param_db['db_name']} user= {param_db['username']} password= {param_db['password']}")
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cur.execute(query_command)
         rows = cur.fetchall()
-        if DEBUG:
+        if debug:
             print("The number of data: ", cur.rowcount)
         return rows
-    param_db = read_json_file('parameter_db.json')  # TODO global db param
+    param_db = read_json_file('parameter_main_db.json')
     conn = psycopg2.connect(f"dbname={param_db['db_name']} user= {param_db['username']} password= {param_db['password']}")
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute(query_command)
     rows = cur.fetchall()
-    if DEBUG:
+    if debug:
         print("The number of data: ", cur.rowcount)
     cur.close()
     conn.close()
     listing = []
-    if not is_local:
-        for row in rows:
-            condo = {'id': row['id'], 'title': row['title']}
-            if 'max_rental_price' in row['price']['rental'] and row['price']['rental']['max_rental_price']:
-                condo['price'] = [float(row['price']['rental']['min_rental_price']),
-                                  float(row['price']['rental']['max_rental_price'])]
-            elif row['price']['rental']['min_rental_price']:
-                condo['price'] = [float(row['price']['rental']['min_rental_price']),
-                                  float(row['price']['rental']['min_rental_price'])]
-            else:
-                condo['price'] = None
-            condo['project'] = row['condo_project_id']
-            condo['size'] = float(row['room_information']['room_area'])
-            condo['tower'] = row['room_information']['building']
-            condo['floor'] = row['room_information']['on_floor']
-            condo['bedroom'] = row['room_information']['no_of_bed']
-            condo['bathroom'] = row['room_information']['no_of_bath']
-            condo['detail'] = normalize_space(filter_special_character(clear_tag(row['detail'])))
-            listing.append(condo)
-            # if DEBUG:
-            #     print(condo)
-    else:
-        listing = rows
+    for row in rows:
+        condo = {'id': row['id'], 'title': row['title']}
+        if 'max_rental_price' in row['price']['rental'] and row['price']['rental']['max_rental_price']:
+            condo['price'] = [float(row['price']['rental']['min_rental_price']),
+                              float(row['price']['rental']['max_rental_price'])]
+        elif row['price']['rental']['min_rental_price']:
+            condo['price'] = [float(row['price']['rental']['min_rental_price']),
+                              float(row['price']['rental']['min_rental_price'])]
+        else:
+            condo['price'] = None
+        condo['project'] = row['condo_project_id']
+        condo['size'] = float(row['room_information']['room_area'])
+        condo['tower'] = row['room_information']['building']
+        condo['floor'] = row['room_information']['on_floor']
+        condo['bedroom'] = row['room_information']['no_of_bed']
+        condo['bathroom'] = row['room_information']['no_of_bath']
+        condo['detail'] = normalize_space(filter_special_character(clear_tag(row['detail'])))
+        listing.append(condo)
     return listing
 
 
@@ -63,7 +58,7 @@ def normalize_space(detail):
 
 
 def clear_tag(detail):
-    detail = re.sub('<.*?>|&nbsp;|&gt;|&lt;|==|\*\*', ' ', detail)
+    detail = re.sub(r'<.*?>|&nbsp;|&gt;|&lt;|==|\*\*', ' ', detail)
     detail = re.sub('\t|=[=]+|:[:]+|/[/]+|\\[\\]+|-[-]+', '', detail)
     detail = re.sub('[ ]+', ' ', detail)
     detail = detail.split('\r\n')
@@ -80,8 +75,8 @@ def filter_special_character(detail):
     return detail
 
 
-def create_table(table_name, conn, cur, DEBUG):
-    if DEBUG:
+def create_table(table_name, conn, cur, debug):
+    if debug:
         print("Creating Table :", table_name)
     command = {
         'projects': """  
@@ -114,7 +109,7 @@ def create_table(table_name, conn, cur, DEBUG):
     conn.commit()
 
 
-def write_database(table_name, data, DEBUG):  # TODO upsert
+def write_database(table_name, data, debug):
     check_command = f"SELECT EXISTS ( SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' and table_name = '{ table_name }');"
     command = {
         'projects': """  
@@ -130,14 +125,14 @@ def write_database(table_name, data, DEBUG):  # TODO upsert
                 ON CONFLICT (id) DO UPDATE SET (condo_project_id, corpus) = (EXCLUDED.condo_project_id, EXCLUDED.corpus);
         """
     }
-    param_db = read_json_file('parameter_db.json')
-    if DEBUG:
+    param_db = read_json_file('parameter_nlp_db.json')
+    if debug:
         print("Writing :", table_name)
     conn = psycopg2.connect(f"dbname={param_db['db_name']} user= {param_db['username']} password= {param_db['password']}")
     cur = conn.cursor()
     cur.execute(check_command)
     if not cur.fetchall()[0][0]:
-        create_table(table_name, conn, cur, DEBUG)
+        create_table(table_name, conn, cur, debug)
     if table_name == 'projects':
         for project in data.values():
             for condo in project:

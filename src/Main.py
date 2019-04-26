@@ -1,15 +1,11 @@
 from flask.json import jsonify
-import src.Query as Q
-import src.ExtractionFilter as Extr
+import src.Query as Query
+import src.ExtractionFilter as Ext
 import src.Similarity as Sim
-import src.WriteFile as W
+import src.WriteFile as Write
 
 
-QUERY = True
 DEBUG = True
-
-
-JSON_FILE = "./data/condo_listings_dup.json"
 GLOBAL_TABLE = "condo_listings_sample"
 
 
@@ -34,73 +30,76 @@ def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
 def clone():
     if DEBUG:
         print("-- Query --")
-    if QUERY:
-        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO query only "parent"
-        rows = Q.query(query_command, False, DEBUG)
-        if not rows:
-            return 'ERROR: Renthub database give nothing', 404
-    else:
-        rows = Q.read_json_file(JSON_FILE)
+    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO check "parent"'s parent
+    rows = Query.query(query_command, False, DEBUG)
+    if not rows:
+        return 'ERROR: Renthub database give nothing', 404
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows, multiple_rows, mismatch_rows = Extr.extraction(rows, DEBUG)
+    filter_rows, multiple_rows, mismatch_rows = Ext.extraction(rows, DEBUG)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
-    projects = Extr.group_by_project(filter_rows)
+    projects = Ext.group_by_project(filter_rows)
     Sim.tokenize_all(projects, DEBUG)
-    Q.write_database('projects', projects, DEBUG)
+    Query.write_database('projects', projects, DEBUG)
     return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
 
 def update(update_id):
     if DEBUG:
         print("-- Query --")
-    if QUERY:
-        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE id = {update_id}"  # TODO query this id from global
-        rows = Q.query(query_command, False, DEBUG)
-        if not rows:
-            return 'ERROR: Renthub database give nothing', 404
-    else:
-        rows = Q.read_json_file(JSON_FILE)
-    if DEBUG:
-        print("-- Extraction & Filter --")
-    filter_rows, multiple_rows, mismatch_rows = Extr.extraction(rows, DEBUG)
-    if not filter_rows:
-        return 'ERROR: All row are multiple content or not-matched content', 401
-    Sim.tokenize_post(filter_rows, DEBUG)
-    Q.write_database('projects', filter_rows, DEBUG)
-    return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
-
-
-def check_post(request):
-    if type(request) == str:
-        if DEBUG:
-            print("Detect type 'ID', query body from local database")
-        query_command = f"SELECT * FROM public.projects WHERE id = {request}"  # TODO edit here, query body data if id is given
-        request = Q.query(query_command, True, DEBUG)
-        if not request:
-            return 'ERROR: Service database give no request body', 404
-    else:
-        request = [request]
-    if DEBUG:
-        print("-- Query --")
-    parameter = Q.read_json_file("parameter.json")
-    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE condo_project_id = {request[0]['condo_project_id']}"  # TODO edit here, query all row in request's project_id
-    matrix = Q.query(query_command, True, DEBUG)
-    if not matrix:
-        return 'ERROR: Service database give no matrix', 404
-    query_command = f"SELECT corpus FROM public.corpus WHERE condo_project_id = {request[0]['condo_project_id']}"  # TODO edit here, query corpus of request's project_id
-    corpus = Q.query(query_command, True, DEBUG)
+    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE id = {update_id}"
+    rows = Query.query(query_command, False, DEBUG)
+    if not rows:
+        return 'ERROR: Renthub database give nothing', 404
+    query_command = f"SELECT corpus FROM public.corpus WHERE condo_project_id = {rows[0]['condo_project_id']}"
+    corpus = Query.query(query_command, True, DEBUG)
     if not corpus:
         return 'ERROR: Service database give no corpus', 404
     else:
         corpus = corpus[0]['corpus']
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_request, multiple_rows, mismatch_rows = Extr.extraction(request, DEBUG)
-    if not filter_request:
+    filter_rows, multiple_rows, mismatch_rows = Ext.extraction(rows, DEBUG)
+    if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
-    Sim.tokenize_post(filter_request, corpus)
+    Sim.tokenize_post(filter_rows, corpus)
+    Query.write_database('projects', filter_rows, DEBUG)
+    return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
+
+
+def check_post(request):
+    if type(request) == int:
+        if DEBUG:
+            print("Detect type 'ID', query body from local database")
+        query_command = f"SELECT * FROM public.projects WHERE id = {request}"
+        request_body = Query.query(query_command, True, DEBUG)
+        if not request_body:
+            return 'ERROR: Service database give no request body', 404
+    else:
+        request_body = [request]
+    if DEBUG:
+        print("-- Query --")
+    parameter = Query.read_json_file("parameter.json")
+    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE condo_project_id = {request_body[0]['condo_project_id']}"
+    matrix = Query.query(query_command, True, DEBUG)
+    if not matrix:
+        return 'ERROR: Service database give no matrix', 404
+    query_command = f"SELECT corpus FROM public.corpus WHERE condo_project_id = {request_body[0]['condo_project_id']}"
+    corpus = Query.query(query_command, True, DEBUG)
+    if not corpus:
+        return 'ERROR: Service database give no corpus', 404
+    else:
+        corpus = corpus[0]['corpus']
+    if DEBUG:
+        print("-- Extraction & Filter --")
+    if type(request) == int:
+        filter_request, multiple_rows, mismatch_rows = request_body, [], []
+    else:
+        filter_request, multiple_rows, mismatch_rows = Ext.extraction(request_body, DEBUG)
+        if not filter_request:
+            return 'ERROR: All row are multiple content or not-matched content', 401
+        Sim.tokenize_post(filter_request, corpus)
     if DEBUG:
         print("-- Scoring --")
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_post(filter_request[0], matrix, parameter)
@@ -112,20 +111,17 @@ def check_post(request):
 def check_all():
     if DEBUG:
         print("-- Query --")
-    parameter = Q.read_json_file("parameter.json")
-    if QUERY:
-        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO query only "parent"
-        rows = Q.query(query_command, False, DEBUG)
-        if not rows:
-            return 'ERROR: Renthub database give nothing', 404
-    else:
-        rows = Q.read_json_file(JSON_FILE)
+    parameter = Query.read_json_file("parameter.json")
+    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO check "parent"'s parent
+    rows = Query.query(query_command, False, DEBUG)
+    if not rows:
+        return 'ERROR: Renthub database give nothing', 404
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows, multiple_rows, mismatch_rows = Extr.extraction(rows, DEBUG)
+    filter_rows, multiple_rows, mismatch_rows = Ext.extraction(rows, DEBUG)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
-    projects = Extr.group_by_project(filter_rows)
+    projects = Ext.group_by_project(filter_rows)
     Sim.tokenize_all(projects, DEBUG)
     if DEBUG:
         print("-- Scoring --")
@@ -136,23 +132,23 @@ def check_all():
 
 
 def get_parameter():
-    return jsonify(Q.read_json_file("parameter.json"))
+    return jsonify(Query.read_json_file("parameter.json"))
 
 
 def set_parameter(data):
-    parameter = Q.read_json_file("parameter.json")
+    parameter = Query.read_json_file("parameter.json")
     for field in data:
         if field == 'weight':
             for weight in data[field]:
-                if weight in parameter[field] and type(parameter[field][weight]) == type(data[field][weight]):
+                if weight in parameter[field] and isinstance(parameter[field][weight], type(data[field][weight])):
                     parameter[field][weight] = data[field][weight]
                 else:
                     return 'ERROR: invalid data type', 401
-        elif field in parameter and type(parameter[field]) == type(data[field]):
+        elif field in parameter and isinstance(parameter[field], type(data[field])):
             parameter[field] = data[field]
         else:
             return 'ERROR: invalid data type', 401
-    W.save_to_file(parameter, 'parameter.json')
+    Write.save_to_file(parameter, 'parameter.json')
     return 'success'
 
 
