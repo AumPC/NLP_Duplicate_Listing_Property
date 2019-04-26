@@ -6,8 +6,8 @@ from itertools import combinations
 from copy import deepcopy
 from pythainlp.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
-import src.Query as Q
-import src.WriteFile as W
+import src.Query as Query
+import src.WriteFile as Write
 import numpy
 
 
@@ -129,8 +129,8 @@ def similarity_all(projects, parameter):
     return strong_duplicate, medium_duplicate, weak_duplicate
 
 
-def tokenize_all(projects, DEBUG):
-    if DEBUG:
+def tokenize_all(projects, debug):
+    if debug:
         print("Calculate \"group_word_matrix\"")
     corpus = []
     for project in projects.values():
@@ -143,7 +143,7 @@ def tokenize_all(projects, DEBUG):
             corpus.append({'id': project[0]['project'], 'condo_project_id': project[0]['project'], 'corpus': vectorizer.get_feature_names()})
         else:
             corpus.append({'id': 0, 'condo_project_id': None, 'corpus': vectorizer.get_feature_names()})
-    Q.write_database('corpus', corpus, DEBUG)
+    Query.write_database('corpus', corpus, debug)
 
 
 def tokenize_post(request, vocabulary):
@@ -174,4 +174,4 @@ def threshold_calculate(pairs, parameter):
             break
         previous_difference = difference
     parameter['min_confidence'] = numpy.percentile(duplicate_pairs, parameter['tail_percentile'])
-    W.save_to_file(parameter, 'parameter.json')
+    Write.save_to_file(parameter, 'parameter.json')
