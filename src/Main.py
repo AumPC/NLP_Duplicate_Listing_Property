@@ -60,36 +60,43 @@ def update(update_id):
         rows = Q.query(query_command, False, DEBUG)
         if not rows:
             return 'ERROR: Renthub database give nothing', 404
+        query_command = f"SELECT corpus FROM public.corpus WHERE condo_project_id = {rows[0]['condo_project_id']}"
+        corpus = Q.query(query_command, True, DEBUG)
+        if not corpus:
+            return 'ERROR: Service database give no corpus', 404
+        else:
+            corpus = corpus[0]['corpus']
     else:
         rows = Q.read_json_file(JSON_FILE)
+        corpus = []
     if DEBUG:
         print("-- Extraction & Filter --")
     filter_rows = Extr.extraction(rows, DEBUG)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
-    Sim.tokenize_post(filter_rows, DEBUG)
+    Sim.tokenize_post(filter_rows, corpus)
     Q.write_database('projects', filter_rows, DEBUG)
     return 'success'
 
 
 def check_post(request):
-    if type(request) == str:
+    if type(request) == int:
         if DEBUG:
             print("Detect type 'ID', query body from local database")
         query_command = f"SELECT * FROM public.projects WHERE id = {request}"  # TODO edit here, query body data if id is given
-        request = Q.query(query_command, True, DEBUG)
-        if not request:
+        request_body = Q.query(query_command, True, DEBUG)
+        if not request_body:
             return 'ERROR: Service database give no request body', 404
     else:
-        request = [request]
+        request_body = [request]
     if DEBUG:
         print("-- Query --")
     parameter = Q.read_json_file("parameter.json")
-    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE condo_project_id = {request[0]['condo_project_id']}"  # TODO edit here, query all row in request's project_id
+    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE condo_project_id = {request_body[0]['condo_project_id']}"  # TODO edit here, query all row in request's project_id
     matrix = Q.query(query_command, True, DEBUG)
     if not matrix:
         return 'ERROR: Service database give no matrix', 404
-    query_command = f"SELECT corpus FROM public.corpus WHERE condo_project_id = {request[0]['condo_project_id']}"  # TODO edit here, query corpus of request's project_id
+    query_command = f"SELECT corpus FROM public.corpus WHERE condo_project_id = {request_body[0]['condo_project_id']}"  # TODO edit here, query corpus of request's project_id
     corpus = Q.query(query_command, True, DEBUG)
     if not corpus:
         return 'ERROR: Service database give no corpus', 404
@@ -97,10 +104,13 @@ def check_post(request):
         corpus = corpus[0]['corpus']
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_request = Extr.extraction(request, DEBUG)
-    if not filter_request:
-        return 'ERROR: All row are multiple content or not-matched content', 401
-    Sim.tokenize_post(filter_request, corpus)
+    if type(request) == int:
+        filter_request = request_body
+    else:
+        filter_request = Extr.extraction(request_body, DEBUG)
+        if not filter_request:
+            return 'ERROR: All row are multiple content or not-matched content', 401
+        Sim.tokenize_post(filter_request, corpus)
     if DEBUG:
         print("-- Scoring --")
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_post(filter_request[0], matrix, parameter)

@@ -27,7 +27,7 @@ def check_by_id(post_id):
 @app.route('/check/request', methods=['POST'])
 def check_by_req():
     data = request.get_json()
-    if type(data) == dict:
+    if type(data) != dict:
         return 'ERROR: invalid data type', 401
     require_fields = ['id', 'condo_project_id', 'title', 'price', 'size', 'tower', 'floor', 'bedroom', 'bathroom', 'detail']
     for field in require_fields:
@@ -49,7 +49,7 @@ def get_parameter():
 @app.route('/parameter', methods=['POST'])
 def set_parameter():
     data = request.get_json()
-    if type(data) == dict:
+    if type(data) != dict:
         return 'ERROR: invalid data type', 401
     return M.set_parameter(data)
 
