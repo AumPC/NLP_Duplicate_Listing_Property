@@ -53,6 +53,13 @@ def update(update_id):
     if not rows:
         return 'ERROR: Renthub database give nothing', 404
     if rows[0]['project'] is not None:
+        query_command = f"SELECT * FROM public.projects WHERE project = {rows[0]['project']}"
+    else:
+        query_command = "SELECT * FROM public.projects WHERE project is null"
+    matrix = Query.query(query_command, True, DEBUG)
+    if not matrix:
+        return 'ERROR: Service database give no matrix', 404
+    if rows[0]['project'] is not None:
         query_command = f"SELECT corpus FROM public.corpus WHERE project = {rows[0]['project']}"
     else:
         query_command = f"SELECT corpus FROM public.corpus WHERE project is null"
@@ -66,7 +73,7 @@ def update(update_id):
     filter_rows, multiple_rows, mismatch_rows = Ext.extraction(rows, DEBUG)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
-    Sim.tokenize_post(filter_rows, corpus)
+    Sim.tokenize_post(filter_rows, matrix, corpus)
     Query.write_database('projects', filter_rows, DEBUG)
     return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
@@ -108,7 +115,7 @@ def check_post(request):
         filter_request, multiple_rows, mismatch_rows = Ext.extraction(request_body, DEBUG)
         if not filter_request:
             return 'ERROR: All row are multiple content or not-matched content', 401
-        Sim.tokenize_post(filter_request, corpus)
+        Sim.tokenize_post(filter_request, matrix, corpus)
     if DEBUG:
         print("-- Scoring --")
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_post(filter_request[0], matrix, parameter)

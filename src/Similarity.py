@@ -146,9 +146,9 @@ def tokenize_all(projects, debug):
     Query.write_database('corpus', corpus, debug)
 
 
-def tokenize_post(request, vocabulary):
+def tokenize_post(request, matrix, vocabulary):
     corpus = [request[0]['title'] + request[0]['detail']]
-    request[0]['detail'] = TfidfVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).transform(corpus).toarray()
+    request[0]['detail'] = TfidfVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).fit(matrix).transform(corpus).toarray()[0]
 
 
 def threshold_calculate(pairs, parameter):
