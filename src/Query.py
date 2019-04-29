@@ -83,7 +83,7 @@ def create_table(table_name, conn, cur, debug):
                 CREATE TABLE public.projects
                 (
                     id integer NOT NULL ,
-                    condo_project_id integer,
+                    project integer,
                     title character varying(255) NOT NULL,
                     price double precision [2],
                     size character varying(255) NOT NULL,
@@ -113,10 +113,10 @@ def write_database(table_name, data, debug):
     check_command = f"SELECT EXISTS ( SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' and table_name = '{ table_name }');"
     command = {
         'projects': """  
-                INSERT INTO public.projects (id, condo_project_id, title, price, size, tower, floor, bedroom, bathroom, detail, ext)
+                INSERT INTO public.projects (id, project, title, price, size, tower, floor, bedroom, bathroom, detail, ext)
                 VALUES (%(id)s, %(project)s, %(title)s, %(price)s, %(size)s, %(tower)s, %(floor)s, %(bedroom)s, %(bathroom)s, %(detail)s, %(ext)s)
-                ON CONFLICT (id) DO UPDATE SET (condo_project_id, title, price, size, tower, floor, bedroom, bathroom, detail, ext) = 
-                (EXCLUDED.condo_project_id, EXCLUDED.title, EXCLUDED.price, EXCLUDED.size, EXCLUDED.tower, 
+                ON CONFLICT (id) DO UPDATE SET (project, title, price, size, tower, floor, bedroom, bathroom, detail, ext) = 
+                (EXCLUDED.project, EXCLUDED.title, EXCLUDED.price, EXCLUDED.size, EXCLUDED.tower, 
                 EXCLUDED.floor, EXCLUDED.bedroom, EXCLUDED.bathroom, EXCLUDED.detail, EXCLUDED.ext);
         """,
         'corpus': """ 
