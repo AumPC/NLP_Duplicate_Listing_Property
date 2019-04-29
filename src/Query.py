@@ -120,9 +120,9 @@ def write_database(table_name, data, debug):
                 EXCLUDED.floor, EXCLUDED.bedroom, EXCLUDED.bathroom, EXCLUDED.detail, EXCLUDED.ext);
         """,
         'corpus': """ 
-                INSERT INTO public.corpus (id, condo_project_id, corpus)
-                VALUES (%(id)s, %(condo_project_id)s, %(corpus)s) 
-                ON CONFLICT (id) DO UPDATE SET (condo_project_id, corpus) = (EXCLUDED.condo_project_id, EXCLUDED.corpus);
+                INSERT INTO public.corpus (id, project, corpus)
+                VALUES (%(id)s, %(project)s, %(corpus)s) 
+                ON CONFLICT (id) DO UPDATE SET (project, corpus) = (EXCLUDED.project, EXCLUDED.corpus);
         """
     }
     param_db = read_json_file('parameter_nlp_db.json')
