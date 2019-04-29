@@ -5,7 +5,7 @@ from collections import defaultdict
 from itertools import combinations
 from copy import deepcopy
 from pythainlp.tokenize import word_tokenize
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
 import src.Query as Query
 import src.WriteFile as Write
 import numpy
@@ -147,8 +147,8 @@ def tokenize_all(projects, debug):
 
 
 def tokenize_post(request, matrix, vocabulary):
-    corpus = [request[0]['title'] + request[0]['detail']]
-    request[0]['detail'] = TfidfVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).fit(matrix).transform(corpus).toarray()[0]
+    corpus = CountVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).fit_transform([request[0]['title'] + request[0]['detail']])
+    request[0]['detail'] = TfidfTransformer().fit([doc['detail'] for doc in matrix]).transform(corpus).toarray()[0]
 
 
 def threshold_calculate(pairs, parameter):
