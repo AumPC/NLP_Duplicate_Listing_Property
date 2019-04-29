@@ -100,7 +100,7 @@ def create_table(table_name, conn, cur, debug):
                 CREATE TABLE public.corpus
                 (
                     id integer NOT NULL,
-                    condo_project_id integer,
+                    project integer,
                     corpus text [],
                     CONSTRAINT corpus_pkey PRIMARY KEY (id)
                 ) """
