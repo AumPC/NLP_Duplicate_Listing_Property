@@ -88,9 +88,9 @@ def similarity_post(request, matrix, parameter):
             medium_duplicate.append((doc, score))
         elif score >= parameter['weak_threshold']:
             weak_duplicate.append((doc, score))
-    strong_duplicate = sorted(strong_duplicate, key=itemgetter(2), reverse=True)
-    medium_duplicate = sorted(medium_duplicate, key=itemgetter(2), reverse=True)
-    weak_duplicate = sorted(weak_duplicate, key=itemgetter(2), reverse=True)
+    strong_duplicate = sorted(strong_duplicate, key=itemgetter(1), reverse=True)
+    medium_duplicate = sorted(medium_duplicate, key=itemgetter(1), reverse=True)
+    weak_duplicate = sorted(weak_duplicate, key=itemgetter(1), reverse=True)
     return strong_duplicate, medium_duplicate, weak_duplicate
 
 
@@ -140,9 +140,9 @@ def tokenize_all(projects, debug):
             doc['threshold_check'] = doc['title'] + doc['detail'][:100] if len(doc['detail']) > 100 else doc['title'] + doc['detail']
             doc['detail'] = matrix[i]
         if project[0]['project'] is not None:
-            corpus.append({'id': project[0]['project'], 'condo_project_id': project[0]['project'], 'corpus': vectorizer.get_feature_names()})
+            corpus.append({'id': project[0]['project'], 'project': project[0]['project'], 'corpus': vectorizer.get_feature_names()})
         else:
-            corpus.append({'id': 0, 'condo_project_id': None, 'corpus': vectorizer.get_feature_names()})
+            corpus.append({'id': 0, 'project': None, 'corpus': vectorizer.get_feature_names()})
     Query.write_database('corpus', corpus, debug)
 
 

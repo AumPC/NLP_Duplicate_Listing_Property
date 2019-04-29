@@ -11,7 +11,7 @@ GLOBAL_TABLE = "condo_listings_sample"
 
 def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
     print(len(strong_duplicate), 'strong-duplicate docs')
-    len_of_print = 3 if len(strong_duplicate) > 2 else len(medium_duplicate)
+    len_of_print = 3 if len(strong_duplicate) > 2 else len(strong_duplicate)
     for i in range(len_of_print):
         print(strong_duplicate[i])
     print('...')
@@ -52,7 +52,10 @@ def update(update_id):
     rows = Query.query(query_command, False, DEBUG)
     if not rows:
         return 'ERROR: Renthub database give nothing', 404
-    query_command = f"SELECT corpus FROM public.corpus WHERE condo_project_id = {rows[0]['condo_project_id']}"
+    if rows[0]['project'] is not None:
+        query_command = f"SELECT corpus FROM public.corpus WHERE project = {rows[0]['project']}"
+    else:
+        query_command = f"SELECT corpus FROM public.corpus WHERE project is null"
     corpus = Query.query(query_command, True, DEBUG)
     if not corpus:
         return 'ERROR: Service database give no corpus', 404
@@ -81,11 +84,17 @@ def check_post(request):
     if DEBUG:
         print("-- Query --")
     parameter = Query.read_json_file("parameter.json")
-    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE condo_project_id = {request_body[0]['condo_project_id']}"
+    if request_body[0]['project'] is not None:
+        query_command = f"SELECT * FROM public.projects WHERE project = {request_body[0]['project']}"
+    else:
+        query_command = "SELECT * FROM public.projects WHERE project is null"
     matrix = Query.query(query_command, True, DEBUG)
     if not matrix:
         return 'ERROR: Service database give no matrix', 404
-    query_command = f"SELECT corpus FROM public.corpus WHERE condo_project_id = {request_body[0]['condo_project_id']}"
+    if request_body[0]['project'] is not None:
+        query_command = f"SELECT corpus FROM public.corpus WHERE project = {request_body[0]['project']}"
+    else:
+        query_command = "SELECT corpus FROM public.corpus WHERE project is null"
     corpus = Query.query(query_command, True, DEBUG)
     if not corpus:
         return 'ERROR: Service database give no corpus', 404
