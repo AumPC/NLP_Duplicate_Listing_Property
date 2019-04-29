@@ -82,11 +82,11 @@ def similarity_post(request, matrix, parameter):
     weak_duplicate = []
     scores = [(doc['id'], score_calculate(request, doc, parameter['weight'], parameter['half_weight_frequency'])) for doc in matrix]
     for doc, score in scores:
-        if score >= parameter['hard_threshold']:
+        if score >= parameter['strong_threshold']:
             strong_duplicate.append((doc, score))
-        elif score >= parameter['soft_threshold']:
+        elif score >= parameter['medium_threshold']:
             medium_duplicate.append((doc, score))
-        elif score >= parameter['min_confidence']:
+        elif score >= parameter['weak_threshold']:
             weak_duplicate.append((doc, score))
     strong_duplicate = sorted(strong_duplicate, key=itemgetter(2), reverse=True)
     medium_duplicate = sorted(medium_duplicate, key=itemgetter(2), reverse=True)
@@ -109,17 +109,17 @@ def similarity_all(projects, parameter):
             if most_confidences[project_id][b][1] < score:
                 most_confidences[project_id][b] = (a, score)
             threshold_check.append((score, threshold_check_a, threshold_check_b))
-    if parameter['auto_threshold'] == 'True':
+    if parameter['auto_threshold']:
         threshold_calculate(threshold_check, parameter)
     for project_id in projects:
         strong_duplicate_pairs = []
         medium_duplicate_pairs = []
         for doc, most_confidence in most_confidences[project_id].items():
-            if most_confidence[1] >= parameter['hard_threshold']:
+            if most_confidence[1] >= parameter['strong_threshold']:
                 strong_duplicate_pairs.append((doc, most_confidence[0]))
-            elif most_confidence[1] >= parameter['soft_threshold']:
+            elif most_confidence[1] >= parameter['medium_threshold']:
                 medium_duplicate_pairs.append((doc, most_confidence[0]))
-            elif most_confidence[1] >= parameter['min_confidence']:
+            elif most_confidence[1] >= parameter['weak_threshold']:
                 weak_duplicate.append((doc, most_confidence[0], most_confidence[1]))
         strong_duplicate.append(group_find(strong_duplicate_pairs))
         medium_duplicate.append(group_find(medium_duplicate_pairs, strong_duplicate[-1]))
@@ -160,7 +160,7 @@ def threshold_calculate(pairs, parameter):
             duplicate_pairs.append(pair[0])
         elif pair[0] > strong_threshold:
             strong_threshold = pair[0]
-    parameter['hard_threshold'] = strong_threshold
+    parameter['strong_threshold'] = strong_threshold
     duplicate_range_count = [0] * parameter['data_range']
     for score in duplicate_pairs:
         i = parameter['data_range'] - 1
@@ -170,8 +170,8 @@ def threshold_calculate(pairs, parameter):
     for i in range(len(duplicate_range_count) - 1):
         difference = duplicate_range_count[i] - duplicate_range_count[i + 1]
         if previous_difference > difference:
-            parameter['soft_threshold'] = (parameter['data_range'] - i - 0.5) / parameter['data_range']
+            parameter['medium_threshold'] = (parameter['data_range'] - i - 0.5) / parameter['data_range']
             break
         previous_difference = difference
-    parameter['min_confidence'] = numpy.percentile(duplicate_pairs, parameter['tail_percentile'])
+    parameter['weak_threshold'] = numpy.percentile(duplicate_pairs, parameter['tail_percentile'])
     Write.save_to_file(parameter, 'parameter.json')

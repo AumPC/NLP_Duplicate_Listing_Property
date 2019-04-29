@@ -140,14 +140,41 @@ def set_parameter(data):
     for field in data:
         if field == 'weight':
             for weight in data[field]:
-                if weight in parameter[field] and isinstance(parameter[field][weight], type(data[field][weight])):
-                    parameter[field][weight] = data[field][weight]
-                else:
-                    return 'ERROR: invalid data type', 401
-        elif field in parameter and isinstance(parameter[field], type(data[field])):
+                if weight not in parameter[field]:
+                    return f'ERROR: invalid {field} field name', 401
+                if not (isinstance(data[field][weight], float) or isinstance(data[field][weight], int)):
+                    return f'ERROR: invalid {field} type', 401
+                if not 0 <= data[field][weight] <= 1:
+                    return f'ERROR: invalid {field} range', 401
+                parameter[field][weight] = data[field][weight]
+        elif field == 'data_range' or field == 'half_weight_frequency':
+            if not isinstance(data[field], int):
+                return f'ERROR: invalid {field} type', 401
+            if data[field] < 1:
+                return f'ERROR: invalid {field} range', 401
+            parameter[field] = data[field]
+        elif field == 'tail_percentile':
+            if not (isinstance(data[field], float) or isinstance(data[field], int)):
+                return f'ERROR: invalid {field} type', 401
+            if not 0 <= data[field] <= 100:
+                return f'ERROR: invalid {field} range', 401
+            parameter[field] = data[field]
+        elif field == "strong_threshold" or field == "weak_threshold" or field == "medium_threshold":
+            if not (isinstance(data[field], float) or isinstance(data[field], int)):
+                return f'ERROR: invalid {field} type', 401
+            if not 0 <= data[field] <= 1:
+                return f'ERROR: invalid {field} range', 401
+            parameter[field] = data[field]
+        elif field == 'auto_threshold':
+            if not isinstance(data[field], bool):
+                return f'ERROR: invalid {field} type', 401
             parameter[field] = data[field]
         else:
-            return 'ERROR: invalid data type', 401
+            return 'ERROR: invalid field name', 401
+    if sum(parameter['weight'].values()) != 1:
+        return 'ERROR: weight summation is not equal 1', 401
+    if not parameter['weak_threshold'] <= parameter['medium_threshold'] <= parameter['strong_threshold']:
+        return 'ERROR: threshold must follow constraint: weak_threshold <= medium_threshold <= strong_threshold'
     Write.save_to_file(parameter, 'parameter.json')
     return 'success'
 
