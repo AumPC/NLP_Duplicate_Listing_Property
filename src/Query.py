@@ -37,7 +37,8 @@ def query(query_command, is_local, debug):
             condo['price'] = None
         condo['project'] = row['condo_project_id']
         condo['size'] = float(row['room_information']['room_area'])
-        condo['tower'] = row['room_information']['building']
+        condo['tower'] = adj_tower(row['room_information']['building'])
+
         condo['floor'] = row['room_information']['on_floor']
         condo['bedroom'] = row['room_information']['no_of_bed']
         condo['bathroom'] = row['room_information']['no_of_bath']
@@ -51,6 +52,24 @@ def read_json_file(filename):
     data = json.load(open_file)
     return data
 
+def adj_tower(tower):
+    if tower is None or tower == '' or tower == '-':
+        return tower
+    build_name = ['อาคาร', 'ตึก', 'building', 'BUILDING', 'Building', 'tower', 'Tower', 'TOWER']
+    for i in build_name:
+        tower = tower.split(i)[-1]
+    tower = re.sub(' ', '', tower)
+    start = 0
+    thai_vowels = ['ฤ', 'ฦ', 'ะ', 'ั', 'า', 'ำ', 'ิ', 'ี', 'ึ', 'ื', 'ุ', 'ู',  '็', '่', 'ฺ',  '์', ',']
+    while start < len(tower) and tower[start] in thai_vowels:
+        start += 1
+    tower = tower[start:]
+    thai_building = {'เอ': 'A', 'บี': 'B', 'ซี': 'C', 'ดี': 'D', 'อี': 'E', 'เอฟ': 'F', 'จี': 'G'}
+    if tower in thai_building.keys():
+        tower = thai_building[tower]
+    else:
+        tower = tower.upper()
+    return tower
 
 def normalize_space(detail):
     detail = ' '.join(detail.split())
