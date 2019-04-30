@@ -49,9 +49,11 @@ def detail_similarity(a, b):
 
 
 def score_calculate(a, b, weight, half_weight_frequency):
-    print(a['detail'],b['detail'])
+    # print(a['detail'],b['detail'])
     field_score = field_similarity(a, b, weight)
     detail_score = detail_similarity(a['detail'], b['detail'])
+    if a['id'] == 596560 and b['id'] == 596465:
+        print(detail_score)
     length_weight = 1 / (1 + log(1 + (sum(a['detail']) + sum(b['detail'])) / 2, half_weight_frequency + 1))
     return (length_weight * field_score) + ((1 - length_weight) * detail_score)
 
@@ -151,9 +153,12 @@ def tokenize_all(projects, idf, debug):
     Query.write_database('corpus', corpus, debug)
 
 
-def tokenize_post(request, matrix, vocabulary):
+def tokenize_post(request, matrix, vocabulary, idf):
     corpus = CountVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).fit_transform([request[0]['title'] + request[0]['detail']])
-    request[0]['detail'] = TfidfTransformer().fit([doc['detail'] for doc in matrix]).transform(corpus).toarray()[0]
+    if idf:
+        request[0]['detail'] = TfidfTransformer().fit([doc['detail'] for doc in matrix]).transform(corpus).toarray()[0]
+    else:
+        request[0]['detail'] = corpus.toarray()
 
 
 def threshold_calculate(pairs, parameter):

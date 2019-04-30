@@ -73,7 +73,7 @@ def update(update_id):
     filter_rows, multiple_rows, mismatch_rows = Ext.extraction(rows, DEBUG)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
-    Sim.tokenize_post(filter_rows, matrix, corpus)
+    Sim.tokenize_post(filter_rows, matrix, corpus, False)
     Query.write_database('projects', filter_rows, DEBUG)
     return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
@@ -150,7 +150,7 @@ def check_post(request):
         filter_request, multiple_rows, mismatch_rows = Ext.extraction(request_body, DEBUG)
         if not filter_request:
             return 'ERROR: All row are multiple content or not-matched content', 401
-        Sim.tokenize_post(filter_request, matrix, corpus)
+        Sim.tokenize_post(filter_request, matrix, corpus, True)
     if DEBUG:
         print("-- Scoring --")
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_post(filter_request[0], matrix, parameter)
