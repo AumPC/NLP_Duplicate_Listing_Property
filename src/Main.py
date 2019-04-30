@@ -40,7 +40,7 @@ def clone():
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
     projects = Ext.group_by_project(filter_rows)
-    Sim.tokenize_all(projects, DEBUG)
+    Sim.tokenize_all(projects, False, DEBUG)
     Query.write_database('projects', projects, DEBUG)
     return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
@@ -138,7 +138,7 @@ def check_all():
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
     projects = Ext.group_by_project(filter_rows)
-    Sim.tokenize_all(projects, DEBUG)
+    Sim.tokenize_all(projects, True, DEBUG)
     if DEBUG:
         print("-- Scoring --")
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_all(projects, parameter)

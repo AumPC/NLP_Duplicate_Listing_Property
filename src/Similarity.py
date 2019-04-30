@@ -5,7 +5,7 @@ from collections import defaultdict
 from itertools import combinations
 from copy import deepcopy
 from pythainlp.tokenize import word_tokenize
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 import src.Query as Query
 import src.WriteFile as Write
 import numpy
@@ -129,13 +129,17 @@ def similarity_all(projects, parameter):
     return strong_duplicate, medium_duplicate, weak_duplicate
 
 
-def tokenize_all(projects, debug):
+def tokenize_all(projects, idf, debug):
     if debug:
         print("Calculate \"group_word_matrix\"")
     corpus = []
     for project in projects.values():
-        vectorizer = TfidfVectorizer(tokenizer=word_tokenize)
-        matrix = vectorizer.fit_transform([doc['title'] + doc['detail'] for doc in project]).toarray()
+        vectorizer = CountVectorizer(tokenizer=word_tokenize)
+        tokenized = vectorizer.fit_transform([doc['title'] + doc['detail'] for doc in project])
+        if idf:
+            matrix = TfidfTransformer().fit_transform(tokenized).toarray()
+        else:
+            matrix = tokenized.toarray()
         for i, doc in enumerate(project):
             doc['threshold_check'] = doc['title'] + doc['detail'][:100] if len(doc['detail']) > 100 else doc['title'] + doc['detail']
             doc['detail'] = matrix[i]
