@@ -136,13 +136,13 @@ def write_database(table_name, data, debug):
     if table_name == 'projects':
         if isinstance(data, list):
             for row in data:
-                row['detail'] = row['detail'].astype(float).tolist()
+                row['detail'] = row['detail'].astype(int).tolist()
                 row['ext'] = json.dumps(row['ext'])
             psycopg2.extras.execute_batch(cur, command[table_name], data)
         else:
             for project in data.values():
                 for condo in project:
-                    condo['detail'] = condo['detail'].astype(float).tolist()
+                    condo['detail'] = condo['detail'].astype(int).tolist()
                     condo['ext'] = json.dumps(condo['ext'])
                 psycopg2.extras.execute_batch(cur, command[table_name], project)
     if table_name == 'corpus':
