@@ -49,6 +49,7 @@ def detail_similarity(a, b):
 
 
 def score_calculate(a, b, weight, half_weight_frequency):
+    print(a['detail'],b['detail'])
     field_score = field_similarity(a, b, weight)
     detail_score = detail_similarity(a['detail'], b['detail'])
     length_weight = 1 / (1 + log(1 + (sum(a['detail']) + sum(b['detail'])) / 2, half_weight_frequency + 1))
