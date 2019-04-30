@@ -80,7 +80,7 @@ def similarity_post(request, matrix, parameter):
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
-    scores = [(doc['id'], score_calculate(request, doc, parameter['weight'], parameter['half_weight_frequency'])) for doc in matrix]
+    scores = [(doc['id'], score_calculate(request, doc, parameter['weight'], parameter['half_weight_frequency'])) for doc in matrix if doc['id'] != request['id']]
     for doc, score in scores:
         if score >= parameter['strong_threshold']:
             strong_duplicate.append((doc, score))
