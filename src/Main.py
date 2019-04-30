@@ -1,21 +1,17 @@
 from flask.json import jsonify
-import src.Query as Q
-import src.ExtractionFilter as Extr
+import src.Query as Query
+import src.ExtractionFilter as Ext
 import src.Similarity as Sim
-import src.WriteFile as W
+import src.WriteFile as Write
 
 
-QUERY = True
 DEBUG = True
-
-
-JSON_FILE = "./data/condo_listings_dup.json"
 GLOBAL_TABLE = "condo_listings_sample"
 
 
 def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
     print(len(strong_duplicate), 'strong-duplicate docs')
-    len_of_print = 3 if len(strong_duplicate) > 2 else len(medium_duplicate)
+    len_of_print = 3 if len(strong_duplicate) > 2 else len(strong_duplicate)
     for i in range(len_of_print):
         print(strong_duplicate[i])
     print('...')
@@ -34,125 +30,203 @@ def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
 def clone():
     if DEBUG:
         print("-- Query --")
-    if QUERY:
-        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO query only "parent"
-        rows = Q.query(query_command, False, DEBUG)
-        if not rows:
-            return 'ERROR: Renthub database give nothing', 404
-    else:
-        rows = Q.read_json_file(JSON_FILE)
+    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO check "parent"'s parent
+    rows = Query.query(query_command, False, DEBUG)
+    if not rows:
+        return 'ERROR: Renthub database give nothing', 404
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows = Extr.extraction(rows, DEBUG)
+    filter_rows, multiple_rows, mismatch_rows = Ext.extraction(rows, DEBUG)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
-    projects = Extr.group_by_project(filter_rows)
-    Sim.tokenize_all(projects, DEBUG)
-    Q.write_database('projects', projects, DEBUG)
-    return 'success'
+    projects = Ext.group_by_project(filter_rows)
+    Sim.tokenize_all(projects, False, DEBUG)
+    Query.write_database('projects', projects, DEBUG)
+    return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
 
 def update(update_id):
     if DEBUG:
         print("-- Query --")
-    if QUERY:
-        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE id = {update_id}"  # TODO query this id from global
-        rows = Q.query(query_command, False, DEBUG)
-        if not rows:
-            return 'ERROR: Renthub database give nothing', 404
+    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE id = {update_id}"
+    rows = Query.query(query_command, False, DEBUG)
+    if not rows:
+        return 'ERROR: Renthub database give nothing', 404
+    if rows[0]['project'] is not None:
+        query_command = f"SELECT * FROM public.projects WHERE project = {rows[0]['project']}"
     else:
-        rows = Q.read_json_file(JSON_FILE)
-    if DEBUG:
-        print("-- Extraction & Filter --")
-    filter_rows = Extr.extraction(rows, DEBUG)
-    if not filter_rows:
-        return 'ERROR: All row are multiple content or not-matched content', 401
-    Sim.tokenize_post(filter_rows, DEBUG)
-    Q.write_database('projects', filter_rows, DEBUG)
-    return 'success'
-
-
-def check_post(request):
-    if type(request) == str:
-        if DEBUG:
-            print("Detect type 'ID', query body from local database")
-        query_command = f"SELECT * FROM public.projects WHERE id = {request}"  # TODO edit here, query body data if id is given
-        request = Q.query(query_command, True, DEBUG)
-        if not request:
-            return 'ERROR: Service database give no request body', 404
-    else:
-        request = [request]
-    if DEBUG:
-        print("-- Query --")
-    parameter = Q.read_json_file("parameter.json")
-    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE condo_project_id = {request[0]['condo_project_id']}"  # TODO edit here, query all row in request's project_id
-    matrix = Q.query(query_command, True, DEBUG)
+        query_command = "SELECT * FROM public.projects WHERE project is null"
+    matrix = Query.query(query_command, True, DEBUG)
     if not matrix:
         return 'ERROR: Service database give no matrix', 404
-    query_command = f"SELECT corpus FROM public.corpus WHERE condo_project_id = {request[0]['condo_project_id']}"  # TODO edit here, query corpus of request's project_id
-    corpus = Q.query(query_command, True, DEBUG)
+    if rows[0]['project'] is not None:
+        query_command = f"SELECT corpus FROM public.corpus WHERE project = {rows[0]['project']}"
+    else:
+        query_command = f"SELECT corpus FROM public.corpus WHERE project is null"
+    corpus = Query.query(query_command, True, DEBUG)
     if not corpus:
         return 'ERROR: Service database give no corpus', 404
     else:
         corpus = corpus[0]['corpus']
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_request = Extr.extraction(request, DEBUG)
-    if not filter_request:
+    filter_rows, multiple_rows, mismatch_rows = Ext.extraction(rows, DEBUG)
+    if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
-    Sim.tokenize_post(filter_request, corpus)
+    Sim.tokenize_post(filter_rows, matrix, corpus, False)
+    Query.write_database('projects', filter_rows, DEBUG)
+    return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
+
+
+def check_post(request):
+    if type(request) == int:
+        if DEBUG:
+            print("Detect type 'ID', query body from local database")
+        query_command = f"SELECT * FROM public.projects WHERE id = {request}"
+        request_body = Query.query(query_command, True, DEBUG)
+        if not request_body:
+            return 'ERROR: Service database give no request body', 404
+    else:
+        for field in request:
+            if field == 'id':
+                if not isinstance(request[field], int):
+                    return f'ERROR: invalid {field} type: expect int', 401
+            elif field == 'project':
+                if not (isinstance(request[field], int) or request[field] is None):
+                    return f'ERROR: invalid {field} type: expect int or None', 401
+            elif field in ['title', 'tower', 'floor', 'bedroom', 'bathroom', 'detail']:
+                if not isinstance(request[field], str):
+                    try:
+                        request[field] = str(request[field])
+                    except:
+                        return f'ERROR: invalid {field} type: expect string', 401
+            elif field == 'size':
+                if not (isinstance(request[field], float) or isinstance(request[field], int)):
+                    try:
+                        request[field] = float(request[field])
+                    except:
+                        return f'ERROR: invalid {field} type: expect int or float', 401
+                    if request[field] < 0:
+                        return f'ERROR: invalid {field} range', 401
+            elif field == 'price':
+                if isinstance(request[field], list):
+                    if len(request[field]) != 2:
+                        return f'ERROR: invalid {field} format: must have length 2', 401
+                    for index in [0, 1]:
+                        if not (isinstance(request[field][index], float) or isinstance(request[field][index], int)):
+                            try:
+                                request[field][index] = float(request[field][index])
+                            except:
+                                return f"ERROR: invalid {field}'s element type: expect int or float", 401
+                    if not 0 <= request[field][0] <= request[field][1]:
+                        return f'ERROR: invalid {field} range', 401
+                elif request[field] is not None:
+                    return f'ERROR: invalid {field} type: expect list or None', 401
+        request_body = [request]
+    if DEBUG:
+        print("-- Query --")
+    parameter = Query.read_json_file("parameter.json")
+    if request_body[0]['project'] is not None:
+        query_command = f"SELECT * FROM public.projects WHERE project = {request_body[0]['project']}"
+    else:
+        query_command = "SELECT * FROM public.projects WHERE project is null"
+    matrix = Query.query(query_command, True, DEBUG)
+    if not matrix:
+        return 'ERROR: Service database give no matrix', 404
+    if request_body[0]['project'] is not None:
+        query_command = f"SELECT corpus FROM public.corpus WHERE project = {request_body[0]['project']}"
+    else:
+        query_command = "SELECT corpus FROM public.corpus WHERE project is null"
+    corpus = Query.query(query_command, True, DEBUG)
+    if not corpus:
+        return 'ERROR: Service database give no corpus', 404
+    else:
+        corpus = corpus[0]['corpus']
+    if DEBUG:
+        print("-- Extraction & Filter --")
+    if type(request) == int:
+        filter_request, multiple_rows, mismatch_rows = request_body, [], []
+    else:
+        filter_request, multiple_rows, mismatch_rows = Ext.extraction(request_body, DEBUG)
+        if not filter_request:
+            return 'ERROR: All row are multiple content or not-matched content', 401
+        Sim.tokenize_post(filter_request, matrix, corpus, True)
     if DEBUG:
         print("-- Scoring --")
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_post(filter_request[0], matrix, parameter)
     if DEBUG:
         print_group(strong_duplicate, medium_duplicate, weak_duplicate)
-    return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate})
+    return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
 
 def check_all():
     if DEBUG:
         print("-- Query --")
-    parameter = Q.read_json_file("parameter.json")
-    if QUERY:
-        query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO query only "parent"
-        rows = Q.query(query_command, False, DEBUG)
-        if not rows:
-            return 'ERROR: Renthub database give nothing', 404
-    else:
-        rows = Q.read_json_file(JSON_FILE)
+    parameter = Query.read_json_file("parameter.json")
+    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO check "parent"'s parent
+    rows = Query.query(query_command, False, DEBUG)
+    if not rows:
+        return 'ERROR: Renthub database give nothing', 404
     if DEBUG:
         print("-- Extraction & Filter --")
-    filter_rows = Extr.extraction(rows, DEBUG)
+    filter_rows, multiple_rows, mismatch_rows = Ext.extraction(rows, DEBUG)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
-    projects = Extr.group_by_project(filter_rows)
-    Sim.tokenize_all(projects, DEBUG)
+    projects = Ext.group_by_project(filter_rows)
+    Sim.tokenize_all(projects, True, DEBUG)
     if DEBUG:
         print("-- Scoring --")
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_all(projects, parameter)
     if DEBUG:
         print_group(strong_duplicate, medium_duplicate, weak_duplicate)
-    return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate})
+    return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
 
 def get_parameter():
-    return jsonify(Q.read_json_file("parameter.json"))
+    return jsonify(Query.read_json_file("parameter.json"))
 
 
 def set_parameter(data):
-    parameter = Q.read_json_file("parameter.json")
+    parameter = Query.read_json_file("parameter.json")
     for field in data:
         if field == 'weight':
             for weight in data[field]:
-                if weight in parameter[field] and type(parameter[field][weight]) == type(data[field][weight]):
-                    parameter[field][weight] = data[field][weight]
-                else:
-                    return 'ERROR: invalid data type', 401
-        elif field in parameter and type(parameter[field]) == type(data[field]):
+                if weight not in parameter[field]:
+                    return f'ERROR: invalid {field} field name', 401
+                if not (isinstance(data[field][weight], float) or isinstance(data[field][weight], int)):
+                    return f'ERROR: invalid {field} type: expect int or float', 401
+                if not 0 <= data[field][weight] <= 1:
+                    return f'ERROR: invalid {field} range', 401
+                parameter[field][weight] = data[field][weight]
+        elif field == 'data_range' or field == 'half_weight_frequency':
+            if not isinstance(data[field], int):
+                return f'ERROR: invalid {field} type: expect int', 401
+            if data[field] < 1:
+                return f'ERROR: invalid {field} range', 401
+            parameter[field] = data[field]
+        elif field == 'tail_percentile':
+            if not (isinstance(data[field], float) or isinstance(data[field], int)):
+                return f'ERROR: invalid {field} type: expect int or float', 401
+            if not 0 <= data[field] <= 100:
+                return f'ERROR: invalid {field} range', 401
+            parameter[field] = data[field]
+        elif field == 'strong_threshold' or field == 'weak_threshold' or field == 'medium_threshold':
+            if not (isinstance(data[field], float) or isinstance(data[field], int)):
+                return f'ERROR: invalid {field} type: expect int or float', 401
+            if not 0 <= data[field] <= 1:
+                return f'ERROR: invalid {field} range', 401
+            parameter[field] = data[field]
+        elif field == 'auto_threshold':
+            if not isinstance(data[field], bool):
+                return f'ERROR: invalid {field} type: expect boolean', 401
             parameter[field] = data[field]
         else:
-            return 'ERROR: invalid data type', 401
-    W.save_to_file(parameter, 'parameter.json')
+            return 'ERROR: invalid field name', 401
+    if sum(parameter['weight'].values()) != 1:
+        return 'ERROR: weight summation is not equal 1', 401
+    if not parameter['weak_threshold'] <= parameter['medium_threshold'] <= parameter['strong_threshold']:
+        return 'ERROR: threshold must follow constraint: weak_threshold <= medium_threshold <= strong_threshold'
+    Write.save_to_file(parameter, 'parameter.json')
     return 'success'
 
 

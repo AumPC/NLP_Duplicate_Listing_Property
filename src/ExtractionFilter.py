@@ -218,7 +218,7 @@ def detail_extraction(detail):
     return ext
 
 
-def extraction(rows, DEBUG):
+def extraction(rows, debug):
     filter_rows = []
     multiple_row = []
     check_floor_row = []
@@ -269,12 +269,12 @@ def extraction(rows, DEBUG):
                 continue
         row['ext'] = ext
         filter_rows.append(row)
-    if DEBUG:
+    if debug:
         print("Not Found Context", not_found)
         print("Multiple Context", len(multiple_row), 'items')
         print("Floor Multiple Context", len(check_floor_row), 'items')
         print("Not Match Context", len(not_match_row), 'items')
-    return filter_rows
+    return filter_rows, multiple_row, not_match_row
 
 
 def group_by_project(rows):
