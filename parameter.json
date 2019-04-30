@@ -2,10 +2,10 @@
     "auto_threshold": true,
     "data_range": 20,
     "half_weight_frequency": 9,
-    "strong_threshold": 1.0,
-    "weak_threshold": 0.7226303250859771,
     "medium_threshold": 0.925,
+    "strong_threshold": 1.0,
     "tail_percentile": 1,
+    "weak_threshold": 0.8991889558963579,
     "weight": {
         "bathroom": 0.1,
         "bedroom": 0.1,

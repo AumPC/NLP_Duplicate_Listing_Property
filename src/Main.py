@@ -146,6 +146,7 @@ def check_post(request):
         print("-- Extraction & Filter --")
     if type(request) == int:
         filter_request, multiple_rows, mismatch_rows = request_body, [], []
+        Sim.transform_post(filter_request, matrix)
     else:
         filter_request, multiple_rows, mismatch_rows = Ext.extraction(request_body, DEBUG)
         if not filter_request:

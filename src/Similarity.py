@@ -49,11 +49,8 @@ def detail_similarity(a, b):
 
 
 def score_calculate(a, b, weight, half_weight_frequency):
-    # print(a['detail'],b['detail'])
     field_score = field_similarity(a, b, weight)
     detail_score = detail_similarity(a['detail'], b['detail'])
-    if a['id'] == 596560 and b['id'] == 596465:
-        print(detail_score)
     length_weight = 1 / (1 + log(1 + (sum(a['detail']) + sum(b['detail'])) / 2, half_weight_frequency + 1))
     return (length_weight * field_score) + ((1 - length_weight) * detail_score)
 
@@ -159,6 +156,14 @@ def tokenize_post(request, matrix, vocabulary, idf):
         request[0]['detail'] = TfidfTransformer().fit([doc['detail'] for doc in matrix]).transform(corpus).toarray()[0]
     else:
         request[0]['detail'] = corpus.toarray()
+
+
+def transform_post(request, matrix):
+    transformer = TfidfTransformer()
+    transformed = transformer.fit_transform([doc['detail'] for doc in matrix]).toarray()
+    for i, doc in enumerate(matrix):
+        doc['detail'] = transformed[i]
+    request[0]['detail'] = transformer.transform([request[0]['detail']]).toarray()[0]
 
 
 def threshold_calculate(pairs, parameter):
