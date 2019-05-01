@@ -6,7 +6,7 @@ import src.WriteFile as Write
 
 
 DEBUG = True
-GLOBAL_TABLE = "condo_listings_dup"
+GLOBAL_TABLE = "condo_listings_sample"
 
 
 def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
@@ -122,7 +122,8 @@ def check_post(request):
                         return f'ERROR: invalid {field} range', 401
                 elif request[field] is not None:
                     return f'ERROR: invalid {field} type: expect list or None', 401
-        request['detail'] = Query.normalize_space(Query.filter_special_character(Query.clear_tag(request['detail'])))
+        request['tower'] = Query.process_tower(request['tower'])
+        request['detail'] = Query.process_detail(request['detail'])
         request_body = [request]
     if DEBUG:
         print("-- Query --")

@@ -53,7 +53,7 @@ def extraction_price_after(detail, keyword):
 def extraction_price(detail):
     prefix_keyword = ['บาท', 'baht']
     postfix_keyword = ['ราคา']
-    ext_price = list(set(extraction_price_before(detail, prefix_keyword) + extraction_price_after(detail, postfix_keyword)))
+    ext_price = sorted(list(set(extraction_price_before(detail, prefix_keyword) + extraction_price_after(detail, postfix_keyword))))
     if len(ext_price) > 2:
         return -1
     if not ext_price:
@@ -116,9 +116,10 @@ def extraction_size(detail):
 
 
 def extraction_tower(detail):
-    thai_building = ['เอ', 'บี', 'ซี', 'ดี', 'อี', 'เอฟ', 'จี']
+    # thai_building = ['เอ', 'บี', 'ซี', 'ดี', 'อี', 'เอฟ', 'จี']
+    thai_building = {'เอ': 'A', 'บี': 'B', 'ซี': 'C', 'ดี': 'D', 'อี': 'E', 'เอฟ': 'F', 'จี': 'G'}
     number_building = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-    name_building = set(thai_building + number_building + list(string.ascii_letters))
+    name_building = set(list(thai_building.keys()) + number_building + list(string.ascii_letters))
     keyword = ['ตึก', 'อาคาร']
     ext_tower_arr = []
     for key in keyword:
@@ -139,6 +140,11 @@ def extraction_tower(detail):
                 continue
             ext_tower_arr += re.split('[ /,]', ext_tower)
     ext_tower_arr = list(set(ext_tower for ext_tower in ext_tower_arr if ext_tower in name_building))
+    for i in range(len(ext_tower_arr)):
+        if ext_tower_arr[i] in thai_building.keys():
+            ext_tower_arr[i] = thai_building[ext_tower_arr[i]]
+        else:
+            ext_tower_arr[i] = ext_tower_arr[i].upper()
     if len(ext_tower_arr) > 1:
         return -1
     if not ext_tower_arr:
@@ -241,13 +247,15 @@ def extraction(rows, debug):
             not_found['bathroom'] += 1
         if ext['floor'] is None:
             not_found['floor'] += 1
-        if ext['price'] is not None and ext['price'] != row['price']:
+        if ext['price'] is not None and row['price'] is not None:
+            if (row['price'][0] == row['price'][1] and (ext['price'][0] != row['price'][0] and ext['price'][1] != row['price'][0])) or \
+            (row['price'][0] != row['price'][1] and ext['price'] != row['price']):
+                not_match_row.append(row)
+                continue
+        if ext['size'] is not None and row['size'] is not None and ext['size'] != row['size']:
             not_match_row.append(row)
             continue
-        if ext['size'] is not None and ext['size'] != row['size']:
-            not_match_row.append(row)
-            continue
-        if ext['tower'] is not None and ext['tower'] != row['tower']:
+        if ext['tower'] is not None and row['tower'] is not None and ext['tower'] != row['tower']:
             if row['tower'] == '':
                 row['tower'] = ext['tower']
             else:
