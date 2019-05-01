@@ -13,8 +13,7 @@ import numpy
 
 def different_numerical(a, b):
     try:
-        score = 1 - (abs(a - b) * 2 / (a + b))
-        return score if score >= 0 else 0
+        return min(1 - (abs(a - b) * 2 / (a + b)), 0)
     except TypeError:
         return int(a is b)
     except ZeroDivisionError:
@@ -190,8 +189,8 @@ def threshold_calculate(pairs, parameter):
     for i in range(len(duplicate_range_count) - 1):
         difference = duplicate_range_count[i] - duplicate_range_count[i + 1]
         if previous_difference > difference:
-            parameter['medium_threshold'] = (parameter['data_range'] - i - 0.5) / parameter['data_range']
+            parameter['medium_threshold'] = min((parameter['data_range'] - i - 0.5) / parameter['data_range'], parameter['strong_threshold'])
             break
         previous_difference = difference
-    parameter['weak_threshold'] = numpy.percentile(duplicate_pairs, parameter['tail_percentile'])
+    parameter['weak_threshold'] = min(numpy.percentile(duplicate_pairs, parameter['tail_percentile']), parameter['medium_threshold'])
     Write.save_to_file(parameter, 'parameter.json')

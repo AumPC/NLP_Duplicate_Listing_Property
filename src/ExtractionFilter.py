@@ -249,7 +249,7 @@ def extraction(rows, debug):
             not_found['floor'] += 1
         if ext['price'] is not None and row['price'] is not None:
             if (row['price'][0] == row['price'][1] and (ext['price'][0] != row['price'][0] and ext['price'][1] != row['price'][0])) or \
-            (row['price'][0] != row['price'][1] and ext['price'] != row['price']):
+               (row['price'][0] != row['price'][1] and ext['price'] != row['price']):
                 not_match_row.append(row)
                 continue
         if ext['size'] is not None and row['size'] is not None and ext['size'] != row['size']:

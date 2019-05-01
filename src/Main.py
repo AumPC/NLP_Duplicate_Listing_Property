@@ -6,7 +6,6 @@ import src.WriteFile as Write
 
 
 DEBUG = True
-GLOBAL_TABLE = "condo_listings_sample"
 
 
 def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
@@ -30,7 +29,7 @@ def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
 def clone():
     if DEBUG:
         print("-- Query --")
-    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO check "parent"'s parent
+    query_command = ["SELECT * FROM ", " WHERE parent_id IS NULL ORDER BY condo_project_id DESC"]
     rows = Query.query(query_command, False, DEBUG)
     if not rows:
         return 'ERROR: Renthub database give nothing', 404
@@ -48,7 +47,7 @@ def clone():
 def update(update_id):
     if DEBUG:
         print("-- Query --")
-    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE id = {update_id}"
+    query_command = ["SELECT * FROM ", f" WHERE id = {update_id}"]
     rows = Query.query(query_command, False, DEBUG)
     if not rows:
         return 'ERROR: Renthub database give nothing', 404
@@ -98,13 +97,13 @@ def check_post(request):
                 if not isinstance(request[field], str):
                     try:
                         request[field] = str(request[field])
-                    except:
+                    except ValueError:
                         return f'ERROR: invalid {field} type: expect string', 401
             elif field == 'size':
                 if not (isinstance(request[field], float) or isinstance(request[field], int)):
                     try:
                         request[field] = float(request[field])
-                    except:
+                    except ValueError:
                         return f'ERROR: invalid {field} type: expect int or float', 401
                     if request[field] < 0:
                         return f'ERROR: invalid {field} range', 401
@@ -116,7 +115,7 @@ def check_post(request):
                         if not (isinstance(request[field][index], float) or isinstance(request[field][index], int)):
                             try:
                                 request[field][index] = float(request[field][index])
-                            except:
+                            except ValueError:
                                 return f"ERROR: invalid {field}'s element type: expect int or float", 401
                     if not 0 <= request[field][0] <= request[field][1]:
                         return f'ERROR: invalid {field} range', 401
@@ -166,7 +165,7 @@ def check_all():
     if DEBUG:
         print("-- Query --")
     parameter = Query.read_json_file("parameter.json")
-    query_command = f"SELECT * FROM {GLOBAL_TABLE} WHERE parent_id IS NULL ORDER BY condo_project_id DESC"  # TODO check "parent"'s parent
+    query_command = ["SELECT * FROM ", " WHERE parent_id IS NULL ORDER BY condo_project_id DESC"]
     rows = Query.query(query_command, False, DEBUG)
     if not rows:
         return 'ERROR: Renthub database give nothing', 404
