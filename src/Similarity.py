@@ -13,7 +13,7 @@ import numpy
 
 def different_numerical(a, b):
     try:
-        return min(1 - (abs(a - b) * 2 / (a + b)), 0)
+        return max(1 - (abs(a - b) * 2 / (a + b)), 0)
     except TypeError:
         return int(a is b)
     except ZeroDivisionError:
