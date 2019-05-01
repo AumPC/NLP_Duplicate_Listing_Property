@@ -13,7 +13,8 @@ import numpy
 
 def different_numerical(a, b):
     try:
-        return 1 - (abs(a - b) * 2 / (a + b))
+        score = 1 - (abs(a - b) * 2 / (a + b))
+        return score if score >= 0 else 0
     except TypeError:
         return int(a is b)
     except ZeroDivisionError:
@@ -151,11 +152,15 @@ def tokenize_all(projects, idf, debug):
 
 
 def tokenize_post(request, matrix, vocabulary, idf):
-    corpus = CountVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).fit_transform([request[0]['title'] + request[0]['detail']])
+    tokenized = CountVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).fit_transform([request[0]['title'] + request[0]['detail']])
     if idf:
-        request[0]['detail'] = TfidfTransformer().fit([doc['detail'] for doc in matrix]).transform(corpus).toarray()[0]
+        transformer = TfidfTransformer()
+        transformed = transformer.fit_transform([doc['detail'] for doc in matrix]).toarray()
+        for i, doc in enumerate(matrix):
+            doc['detail'] = transformed[i]
+        request[0]['detail'] = transformer.transform(tokenized).toarray()[0]
     else:
-        request[0]['detail'] = corpus.toarray()
+        request[0]['detail'] = tokenized.toarray()
 
 
 def transform_post(request, matrix):
