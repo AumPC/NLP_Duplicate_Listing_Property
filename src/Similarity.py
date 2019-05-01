@@ -161,7 +161,7 @@ def tokenize_post(request, matrix, vocabulary, idf):
             doc['detail'] = transformed[i]
         request[0]['detail'] = transformer.transform(tokenized).toarray()[0]
     else:
-        request[0]['detail'] = tokenized.toarray()
+        request[0]['detail'] = tokenized.toarray()[0]
 
 
 def transform_post(request, matrix):
