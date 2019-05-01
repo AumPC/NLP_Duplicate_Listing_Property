@@ -87,41 +87,8 @@ def check_post(request):
         if not request_body:
             return 'ERROR: Service database give no request body', 404
     else:
-        for field in request:
-            if field == 'id':
-                if not isinstance(request[field], int):
-                    return f'ERROR: invalid {field} type: expect int', 401
-            elif field == 'project':
-                if not (isinstance(request[field], int) or request[field] is None):
-                    return f'ERROR: invalid {field} type: expect int or None', 401
-            elif field in ['title', 'tower', 'floor', 'bedroom', 'bathroom', 'detail']:
-                if not isinstance(request[field], str):
-                    try:
-                        request[field] = str(request[field])
-                    except:
-                        return f'ERROR: invalid {field} type: expect string', 401
-            elif field == 'size':
-                if not (isinstance(request[field], float) or isinstance(request[field], int)):
-                    try:
-                        request[field] = float(request[field])
-                    except:
-                        return f'ERROR: invalid {field} type: expect int or float', 401
-                    if request[field] < 0:
-                        return f'ERROR: invalid {field} range', 401
-            elif field == 'price':
-                if isinstance(request[field], list):
-                    if len(request[field]) != 2:
-                        return f'ERROR: invalid {field} format: must have length 2', 401
-                    for index in [0, 1]:
-                        if not (isinstance(request[field][index], float) or isinstance(request[field][index], int)):
-                            try:
-                                request[field][index] = float(request[field][index])
-                            except:
-                                return f"ERROR: invalid {field}'s element type: expect int or float", 401
-                    if not 0 <= request[field][0] <= request[field][1]:
-                        return f'ERROR: invalid {field} range', 401
-                elif request[field] is not None:
-                    return f'ERROR: invalid {field} type: expect list or None', 401
+        request['tower'] = Query.process_tower(request['tower'])
+        request['detail'] = Query.process_detail(request['detail'])
         request_body = [request]
     if DEBUG:
         print("-- Query --")

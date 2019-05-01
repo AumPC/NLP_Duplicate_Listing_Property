@@ -37,12 +37,12 @@ def query(query_command, is_local, debug):
             condo['price'] = None
         condo['project'] = row['condo_project_id']
         condo['size'] = float(row['room_information']['room_area'])
-        condo['tower'] = adj_tower(row['room_information']['building'])
+        condo['tower'] = process_tower(row['room_information']['building'])
 
         condo['floor'] = row['room_information']['on_floor']
         condo['bedroom'] = row['room_information']['no_of_bed']
         condo['bathroom'] = row['room_information']['no_of_bath']
-        condo['detail'] = normalize_space(filter_special_character(clear_tag(row['detail'])))
+        condo['detail'] = process_detail(row['detail'])
         listing.append(condo)
     return listing
 
@@ -52,7 +52,7 @@ def read_json_file(filename):
     data = json.load(open_file)
     return data
 
-def adj_tower(tower):
+def process_tower(tower):
     if tower is None or tower == '' or tower == '-':
         return tower
     build_name = ['อาคาร', 'ตึก', 'building', 'BUILDING', 'Building', 'tower', 'Tower', 'TOWER']
@@ -70,6 +70,9 @@ def adj_tower(tower):
     else:
         tower = tower.upper()
     return tower
+
+def process_detail(detail):
+    return normalize_space(filter_special_character(clear_tag(detail)))
 
 def normalize_space(detail):
     detail = ' '.join(detail.split())
