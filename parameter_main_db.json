@@ -1,0 +1,8 @@
+{
+  "db_name": "example",
+  "username": "example",
+  "password": "example",
+  "host": "localhost",
+  "port": 5432,
+  "table": "example"
+}

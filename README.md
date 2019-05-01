@@ -12,7 +12,6 @@ An NLP project: Detect duplication of property in condo listings
 - Require own database which describe in *parameter_nlp_db.json*.
 - Require global database which describe in *parameter_main_db.json*.
 
-
 # Run Module
 `flask run --reload`
 

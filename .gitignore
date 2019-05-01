@@ -2,7 +2,5 @@
 /cached
 /.idea
 .vscode
-parameter_nlp_db.json
-parameter_main_db.json
 /results
 /env
