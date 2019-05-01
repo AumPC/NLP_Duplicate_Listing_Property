@@ -182,11 +182,11 @@ def extraction_floor_before(floor, ext_floor):
         point = 0
         if floor[i+1] == '':
             continue
-        while floor[i+1][point] in ' 0123456789':
+        while floor[i+1][point] in ' 0123456789' + string.ascii_letters:
             point += 1
             if point >= len(floor[i+1]):
                 break
-        ext_floor_arr = floor[i+1][0:point]
+        ext_floor_arr = floor[i+1][0:point].upper()
         ext_floor_arr = re.split('[ /,]', ext_floor_arr)
         for value in ext_floor_arr:
             if value and ext_floor is None:
@@ -261,12 +261,18 @@ def extraction(rows, debug):
             else:
                 not_match_row.append(row)
                 continue
-        if ext['bedroom'] is not None and ext['bedroom'] != row['bedroom']:
-            not_match_row.append(row)
-            continue
-        if ext['bathroom'] is not None and ext['bathroom'] != row['bathroom']:
-            not_match_row.append(row)
-            continue
+        if ext['bedroom'] is not None and row['bedroom'] is not None and ext['bedroom'] != row['bedroom']:
+            if row['bedroom'] == '':
+                row['bedroom'] = ext['bedroom']
+            else:
+                not_match_row.append(row)
+                continue
+        if ext['bathroom'] is not None and row['bathroom'] is not None and ext['bathroom'] != row['bathroom']:
+            if row['bathroom'] == '':
+                row['bathroom'] = ext['bathroom']
+            else:
+                not_match_row.append(row)
+                continue
         if ext['floor'] is not None and ext['floor'] != row['floor']:
             if ext['floor'] == -1:
                 check_floor_row.append(row['id'])

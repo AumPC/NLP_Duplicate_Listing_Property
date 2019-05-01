@@ -88,6 +88,7 @@ def check_post(request):
             return 'ERROR: Service database give no request body', 404
     else:
         request['tower'] = Query.process_tower(request['tower'])
+        request['detail'] = Query.process_floor(request['floor'])
         request['detail'] = Query.process_detail(request['detail'])
         request_body = [request]
     if DEBUG:

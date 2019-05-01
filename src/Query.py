@@ -39,7 +39,7 @@ def query(query_command, is_local, debug):
         condo['size'] = float(row['room_information']['room_area'])
         condo['tower'] = process_tower(row['room_information']['building'])
 
-        condo['floor'] = row['room_information']['on_floor']
+        condo['floor'] = process_floor(row['room_information']['on_floor'])
         condo['bedroom'] = row['room_information']['no_of_bed']
         condo['bathroom'] = row['room_information']['no_of_bath']
         condo['detail'] = process_detail(row['detail'])
@@ -51,6 +51,7 @@ def read_json_file(filename):
     open_file = open(filename, 'r')
     data = json.load(open_file)
     return data
+
 
 def process_tower(tower):
     if tower is None or tower == '' or tower == '-':
@@ -71,8 +72,29 @@ def process_tower(tower):
         tower = tower.upper()
     return tower
 
+
+def process_floor(floor):
+    if floor is None or floor == '' or floor == '-':
+        return floor
+    floor_name = ['ชั้น', 'floor']
+    for i in floor_name:
+        floor = floor.split(i)[-1]
+    floor = re.sub(' ', '', floor)
+    start = 0
+    thai_vowels = ['ฤ', 'ฦ', 'ะ', 'ั', 'า', 'ำ', 'ิ', 'ี', 'ึ', 'ื', 'ุ', 'ู',  '็', '่', 'ฺ',  '์', ',']
+    while start < len(floor) and floor[start] in thai_vowels:
+        start += 1
+    floor = floor[start:]
+    thai_building = {'เอ': 'A', 'บี': 'B', 'ซี': 'C', 'ดี': 'D', 'อี': 'E', 'เอฟ': 'F', 'จี': 'G'}
+    for i in thai_building.keys():
+        floor = re.sub(i, thai_building[i], floor)
+    floor = floor.upper()
+    return floor
+
+
 def process_detail(detail):
     return normalize_space(filter_special_character(clear_tag(detail)))
+
 
 def normalize_space(detail):
     detail = ' '.join(detail.split())
