@@ -88,5 +88,10 @@ def set_parameter():
     return Main.set_parameter(data)
 
 
+@app.route('/parameter/reset', methods=['POST'])
+def reset_parameter():
+    return Main.reset_parameter()
+
+
 if __name__ == '__main__':
     app.run('0.0.0.0', 5000)

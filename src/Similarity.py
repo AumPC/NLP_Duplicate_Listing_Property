@@ -134,6 +134,8 @@ def tokenize_all(projects, idf, debug):
         print("Calculate \"group_word_matrix\"")
     corpus = []
     for project in projects.values():
+        if debug:
+            print("Tokenize project", project[0]['project'])
         vectorizer = CountVectorizer(tokenizer=word_tokenize)
         tokenized = vectorizer.fit_transform([doc['title'] + doc['detail'] for doc in project])
         if idf:

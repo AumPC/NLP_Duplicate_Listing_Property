@@ -26,21 +26,21 @@ def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
     print('...')
 
 
-def clone():
-    if DEBUG:
+def clone(debug=DEBUG):
+    if debug:
         print("-- Query --")
     query_command = ["SELECT * FROM ", " WHERE parent_id IS NULL ORDER BY condo_project_id DESC"]
-    rows = Query.query(query_command, False, DEBUG)
+    rows = Query.query(query_command, False, debug)
     if not rows:
         return 'ERROR: Renthub database give nothing', 404
-    if DEBUG:
+    if debug:
         print("-- Extraction & Filter --")
-    filter_rows, multiple_rows, mismatch_rows = Ext.extraction(rows, DEBUG)
+    filter_rows, multiple_rows, mismatch_rows = Ext.extraction(rows, debug)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
     projects = Ext.group_by_project(filter_rows)
-    Sim.tokenize_all(projects, False, DEBUG)
-    Query.write_database('projects', projects, DEBUG)
+    Sim.tokenize_all(projects, False, debug)
+    Query.write_database('projects', projects, debug)
     return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
 
@@ -161,25 +161,25 @@ def check_post(request):
     return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
 
-def check_all():
-    if DEBUG:
+def check_all(debug=DEBUG):
+    if debug:
         print("-- Query --")
     parameter = Query.read_json_file("parameter.json")
     query_command = ["SELECT * FROM ", " WHERE parent_id IS NULL ORDER BY condo_project_id DESC"]
-    rows = Query.query(query_command, False, DEBUG)
+    rows = Query.query(query_command, False, debug)
     if not rows:
         return 'ERROR: Renthub database give nothing', 404
-    if DEBUG:
+    if debug:
         print("-- Extraction & Filter --")
-    filter_rows, multiple_rows, mismatch_rows = Ext.extraction(rows, DEBUG)
+    filter_rows, multiple_rows, mismatch_rows = Ext.extraction(rows, debug)
     if not filter_rows:
         return 'ERROR: All row are multiple content or not-matched content', 401
     projects = Ext.group_by_project(filter_rows)
-    Sim.tokenize_all(projects, True, DEBUG)
-    if DEBUG:
+    Sim.tokenize_all(projects, True, debug)
+    if debug:
         print("-- Scoring --")
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_all(projects, parameter)
-    if DEBUG:
+    if debug:
         print_group(strong_duplicate, medium_duplicate, weak_duplicate)
     return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
@@ -230,6 +230,20 @@ def set_parameter(data):
         return 'ERROR: threshold must follow constraint: weak_threshold <= medium_threshold <= strong_threshold'
     Write.save_to_file(parameter, 'parameter.json')
     return 'success'
+
+
+def reset_parameter():
+    parameter = {'auto_threshold': True, 'data_range': 20, 'half_weight_frequency': 9, 'medium_threshold': 1.0,
+                 'tail_percentile': 1, 'strong_threshold': 1.0, 'weak_threshold': 1.0, 'weight': {
+                    "bathroom": 0.1,
+                    "bedroom": 0.1,
+                    "floor": 0.2,
+                    "price": 0.35,
+                    "size": 0.1,
+                    "tower": 0.15
+                 }}
+    Write.save_to_file(parameter, 'parameter.json')
+    return jsonify(parameter)
 
 
 if __name__ == "__main__":

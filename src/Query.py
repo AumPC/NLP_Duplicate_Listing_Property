@@ -172,6 +172,8 @@ def write_database(table_name, data, debug):
             psycopg2.extras.execute_batch(cur, command[table_name], data)
         else:
             for project in data.values():
+                if debug:
+                    print('Writing project', project[0]['project'])
                 for condo in project:
                     condo['detail'] = condo['detail'].astype(int).tolist()
                     condo['ext'] = json.dumps(condo['ext'])
