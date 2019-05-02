@@ -52,24 +52,26 @@ def read_json_file(filename):
     data = json.load(open_file)
     return data
 
+def clean_replace_text(text, cut_name, replace_arr):
+    for i in cut_name:
+        text = text.split(i)[-1]
+    text = re.sub(' ', '', text)
+    start = 0
+    thai_vowels = ['ฤ', 'ฦ', 'ะ', 'ั', 'า', 'ำ', 'ิ', 'ี', 'ึ', 'ื', 'ุ', 'ู',  '็', '่', 'ฺ',  '์', ',']
+    while start < len(text) and text[start] in thai_vowels:
+        start += 1
+    text = text[start:].upper()
+    for i in replace_arr.keys():
+        text = re.sub(i, replace_arr[i], text)
+    return text
+
 
 def process_tower(tower):
     if tower is None or tower == '' or tower == '-':
         return tower
     build_name = ['อาคาร', 'ตึก', 'building', 'BUILDING', 'Building', 'tower', 'Tower', 'TOWER']
-    for i in build_name:
-        tower = tower.split(i)[-1]
-    tower = re.sub(' ', '', tower)
-    start = 0
-    thai_vowels = ['ฤ', 'ฦ', 'ะ', 'ั', 'า', 'ำ', 'ิ', 'ี', 'ึ', 'ื', 'ุ', 'ู',  '็', '่', 'ฺ',  '์', ',']
-    while start < len(tower) and tower[start] in thai_vowels:
-        start += 1
-    tower = tower[start:]
     thai_building = {'เอ': 'A', 'บี': 'B', 'ซี': 'C', 'ดี': 'D', 'อี': 'E', 'เอฟ': 'F', 'จี': 'G'}
-    if tower in thai_building.keys():
-        tower = thai_building[tower]
-    else:
-        tower = tower.upper()
+    tower = clean_replace_text(tower, build_name, thai_building)
     return tower
 
 
@@ -77,18 +79,8 @@ def process_floor(floor):
     if floor is None or floor == '' or floor == '-':
         return floor
     floor_name = ['ชั้น', 'floor']
-    for i in floor_name:
-        floor = floor.split(i)[-1]
-    floor = re.sub(' ', '', floor)
-    start = 0
-    thai_vowels = ['ฤ', 'ฦ', 'ะ', 'ั', 'า', 'ำ', 'ิ', 'ี', 'ึ', 'ื', 'ุ', 'ู',  '็', '่', 'ฺ',  '์', ',']
-    while start < len(floor) and floor[start] in thai_vowels:
-        start += 1
-    floor = floor[start:]
     thai_building = {'เอ': 'A', 'บี': 'B', 'ซี': 'C', 'ดี': 'D', 'อี': 'E', 'เอฟ': 'F', 'จี': 'G'}
-    for i in thai_building.keys():
-        floor = re.sub(i, thai_building[i], floor)
-    floor = floor.upper()
+    floor = clean_replace_text(floor, floor_name, thai_building)    
     return floor
 
 

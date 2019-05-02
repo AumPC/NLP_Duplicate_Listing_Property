@@ -7,53 +7,38 @@ from itertools import groupby
 def extraction_price_before(detail, keyword):
     ext_price_arr = []
     for key in keyword:
-        price = detail.split(key)
-        for i in range(len(price)-1):
-            point = len(price[i])-1
-            while price[i][point] in ' ,':
-                point -= 1
-                if point < 1:
-                    break
-            while price[i][point] in '0123456789,':
+        for price in detail.split(key)[:-1]:
+            point = len(price)-1
+            while price[point] in '0123456789, ':
                 point -= 1
                 if point < 0:
                     break
-            ext_str = re.sub('[, ]', '', price[i][point+1:])
-            value = float(ext_str) if ext_str != "" else None
-            if not value or not (1000 < value < 1000000):
-                continue
-            ext_price_arr.append(float(value))
+            ext_price_arr.append(price[point+1:])
     return ext_price_arr
 
 
 def extraction_price_after(detail, keyword):
     ext_price_arr = []
     for key in keyword:
-        price = detail.split(key)
-        for i in range(len(price)-1):
+        for price in detail.split(key)[1:]:
             point = 0
-            if len(price[i+1]) == 0:
+            if len(price) == 0:
                 continue
-            while price[i+1][point] in ' ,':
+            while price[point] in '0123456789, ':
                 point += 1
-                if point >= len(price[i+1]):
+                if point >= len(price):
                     break
-            while point < len(price[i+1]) and price[i+1][point] in '0123456789,':
-                point += 1
-                if point >= len(price[i+1]):
-                    break
-            ext_str = re.sub('[, ]', '', price[i+1][0:point])
-            value = float(ext_str) if ext_str != "" else None
-            if not value or not (1000 < value < 1000000):
-                continue
-            ext_price_arr.append(float(value))
+            ext_price_arr.append(price[0:point])
     return ext_price_arr
 
 
 def extraction_price(detail):
     prefix_keyword = ['บาท', 'baht']
     postfix_keyword = ['ราคา']
-    ext_price = sorted(list(set(extraction_price_before(detail, prefix_keyword) + extraction_price_after(detail, postfix_keyword))))
+    ext_price = extraction_price_before(detail, prefix_keyword) + extraction_price_after(detail, postfix_keyword)
+    ext_price = [re.sub('[, ]', '', price) for price in ext_price]
+    ext_price = [float(price) for price in ext_price if price and 1000 < float(price) < 1000000]
+    ext_price = sorted(list(set(ext_price)))
     if len(ext_price) > 2:
         return -1
     if not ext_price:
@@ -64,32 +49,28 @@ def extraction_price(detail):
 def extraction_size_before(detail, keyword):
     ext_size_arr = []
     for key in keyword:
-        size = detail.split(key)
-        for i in range(len(size)-1):
-            point = len(size[i])-1
-            while size[i][point] in '0123456789 /,.':
+        for size in detail.split(key)[:-1]:
+            point = len(size)-1
+            while size[point] in '0123456789 /,.':
                 point -= 1
                 if point < 0:
                     break
-            ext_size_arr += re.split('[ /,]', size[i][point+1:])
-    ext_size_arr = [float(ext_size) for ext_size in ext_size_arr if ext_size and ext_size[0] != '.' and ext_size[-1] != '.']
+            ext_size_arr.append(size[point+1:])
     return ext_size_arr
 
 
 def extraction_size_after(detail, keyword):
     ext_size_arr = []
     for key in keyword:
-        size = detail.split(key)
-        for i in range(len(size)-1):
+        for size in detail.split(key)[1:]:
             point = 0
-            if size[i+1] == '':
+            if size == '':
                 continue
-            while size[i+1][point] in '0123456789 /,.':
+            while size[point] in '0123456789 /,.':
                 point += 1
-                if point >= len(size[i+1]):
+                if point >= len(size):
                     break
-            ext_size_arr += re.split('[ /,]', size[i+1][0:point])
-    ext_size_arr = [float(ext_size) for ext_size in ext_size_arr if ext_size and ext_size[0] != '.' and ext_size[-1] != '.']
+            ext_size_arr.append(size[0:point])
     return ext_size_arr
 
 
@@ -107,7 +88,9 @@ def extraction_size(detail):
         # 'ขนาด',
         # 'พื้นที่',
         'sq.m.):']
-    ext_size = list(set(extraction_size_before(detail, prefix_keyword) + extraction_size_after(detail, postfix_keyword)))
+    ext_size = extraction_size_before(detail, prefix_keyword) + extraction_size_after(detail, postfix_keyword)
+    ext_size = [float(value) for size in ext_size for value in re.split('[ /,]', size) if value and value[0] != '.' and value[-1] != '.']
+    ext_size = list(set(ext_size))
     if len(ext_size) > 1:
         return -1
     if not ext_size:
@@ -153,21 +136,34 @@ def extraction_tower(detail):
 
 
 def extraction_bed_bath(detail):
-    patterns = ['([0-9, ]+)ห้องนอน([0-9, ]+)ห้องน้ำ', 'ห้องนอน([0-9, ]+)ห้องน้ำ([0-9, ]+)',
-                '([0-9, ]+)นอน([0-9, ]+)น้ำ', 'นอน([0-9, ]+)น้ำ([0-9, ]+)', 
-                '([0-9, ]+)bedroom([0-9, ]+) bathroom', '([0-9, ]+)bed([0-9, ]+)bath']
+    patterns = ['([0-9, ]+)ห้องนอน([0-9, ]+)ห้องน้ำ', '([0-9, ]+)นอน([0-9, ]+)น้ำ', 
+                '([0-9, ]+)bedroom([0-9, ]+)bathroom', '([0-9, ]+)bed([0-9, ]+)bath']
     bedroom = set()
     bathroom = set()
     for p in patterns:
         exp = re.compile(p)
         for i in exp.findall(detail):
-            bed = [j for j in re.split(' ', re.sub(',', '', i[0])) if j != '' and int(j) < 10]
+            bed = [j for j in re.split(' ', re.sub(',', '', i[0])) if j != '']
             bed = [bed[-1]] if len(bed) > 0 else None
-            bath = [j for j in re.split(' ', re.sub(',', '', i[1])) if j != '' and int(j) < 10]
+            bath = [j for j in re.split(' ', re.sub(',', '', i[1])) if j != '']
             bath = [bath[-1]] if len(bath) > 0 else None
             if bed is not None and bath is not None:
                 bedroom.update(bed)
                 bathroom.update(bath)
+    if not bedroom and not bathroom:
+        patterns = ['ห้องนอน([0-9, ]+)ห้องน้ำ([0-9, ]+)', 'นอน([0-9, ]+)น้ำ([0-9, ]+)', 
+                    'bedroom([0-9, ]+)bathroom([0-9, ]+)', 'bed([0-9, ]+)bath([0-9, ]+)'
+            ] 
+        for p in patterns:
+            exp = re.compile(p)
+            for i in exp.findall(detail):
+                bed = [j for j in re.split(' ', re.sub(',', '', i[0])) if j != '']
+                bed = [bed[-1]] if len(bed) > 0 else None
+                bath = [j for j in re.split(' ', re.sub(',', '', i[1])) if j != '']
+                bath = [bath[-1]] if len(bath) > 0 else None
+                if bed is not None and bath is not None:
+                    bedroom.update(bed)
+                    bathroom.update(bath)
     if len(bedroom) > 1 or len(bathroom) > 1:
         return -1, -1
     bedroom = bedroom.pop() if len(bedroom) > 0 else None
@@ -233,7 +229,7 @@ def extraction(rows, debug):
     for row in rows:
         ext = detail_extraction(row['detail'])
         if ext == -1:
-            multiple_row.append(row)
+            multiple_row.append(row['id'])
             continue
         if ext['price'] is None:
             not_found['price'] += 1
@@ -250,28 +246,28 @@ def extraction(rows, debug):
         if ext['price'] is not None and row['price'] is not None:
             if (row['price'][0] == row['price'][1] and (ext['price'][0] != row['price'][0] and ext['price'][1] != row['price'][0])) or \
             (row['price'][0] != row['price'][1] and ext['price'] != row['price']):
-                not_match_row.append(row)
+                not_match_row.append(row['id'])
                 continue
         if ext['size'] is not None and row['size'] is not None and ext['size'] != row['size']:
-            not_match_row.append(row)
+            not_match_row.append(row['id'])
             continue
         if ext['tower'] is not None and row['tower'] is not None and ext['tower'] != row['tower']:
             if row['tower'] == '':
                 row['tower'] = ext['tower']
             else:
-                not_match_row.append(row)
+                not_match_row.append(row['id'])
                 continue
         if ext['bedroom'] is not None and row['bedroom'] is not None and ext['bedroom'] != row['bedroom']:
             if row['bedroom'] == '':
                 row['bedroom'] = ext['bedroom']
             else:
-                not_match_row.append(row)
+                not_match_row.append(row['id'])
                 continue
         if ext['bathroom'] is not None and row['bathroom'] is not None and ext['bathroom'] != row['bathroom']:
             if row['bathroom'] == '':
                 row['bathroom'] = ext['bathroom']
             else:
-                not_match_row.append(row)
+                not_match_row.append(row['id'])
                 continue
         if ext['floor'] is not None and ext['floor'] != row['floor']:
             if ext['floor'] == -1:
@@ -279,7 +275,7 @@ def extraction(rows, debug):
                 ext['floor'] = None
                 not_found['floor'] += 1
             else:
-                not_match_row.append(row)
+                not_match_row.append(row['id'])
                 continue
         row['ext'] = ext
         filter_rows.append(row)
