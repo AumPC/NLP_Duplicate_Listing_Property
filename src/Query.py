@@ -5,10 +5,14 @@ import re
 from string import ascii_letters, punctuation, digits, whitespace
 
 
+GLOBAL_TABLE = "condo_listings_sample"
+
+
 def query(query_command, is_local, debug):
     if is_local:
         param_db = read_json_file('parameter_nlp_db.json')
-        conn = psycopg2.connect(f"dbname={param_db['db_name']} user= {param_db['username']} password= {param_db['password']}")
+        conn = psycopg2.connect(dbname=param_db['db_name'], user=param_db['username'], password=param_db['password'],
+                                host=param_db['host'], port=param_db['port'])
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cur.execute(query_command)
         rows = cur.fetchall()
@@ -16,9 +20,11 @@ def query(query_command, is_local, debug):
             print("The number of data: ", cur.rowcount)
         return rows
     param_db = read_json_file('parameter_main_db.json')
-    conn = psycopg2.connect(f"dbname={param_db['db_name']} user= {param_db['username']} password= {param_db['password']}")
+    conn = psycopg2.connect(dbname=param_db['db_name'], user=param_db['username'], password=param_db['password'],
+                            host=param_db['host'], port=param_db['port'])
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute(query_command)
+    # cur.execute(f"{query_command[0]}{param_db['table']}{query_command[1]}")
+    cur.execute(f"{query_command[0]}{GLOBAL_TABLE}{query_command[1]}")
     rows = cur.fetchall()
     if debug:
         print("The number of data: ", cur.rowcount)
@@ -183,6 +189,8 @@ def write_database(table_name, data, debug):
             psycopg2.extras.execute_batch(cur, command[table_name], data)
         else:
             for project in data.values():
+                if debug:
+                    print('Writing project', project[0]['project'])
                 for condo in project:
                     condo['detail'] = condo['detail'].astype(int).tolist()
                     condo['ext'] = json.dumps(condo['ext'])

@@ -13,7 +13,7 @@ import numpy
 
 def different_numerical(a, b):
     try:
-        return 1 - (abs(a - b) * 2 / (a + b))
+        return max(1 - (abs(a - b) * 2 / (a + b)), 0)
     except TypeError:
         return int(a is b)
     except ZeroDivisionError:
@@ -134,6 +134,8 @@ def tokenize_all(projects, idf, debug):
         print("Calculate \"group_word_matrix\"")
     corpus = []
     for project in projects.values():
+        if debug:
+            print("Tokenize project", project[0]['project'])
         vectorizer = CountVectorizer(tokenizer=word_tokenize)
         tokenized = vectorizer.fit_transform([doc['title'] + doc['detail'] for doc in project])
         if idf:
@@ -151,11 +153,15 @@ def tokenize_all(projects, idf, debug):
 
 
 def tokenize_post(request, matrix, vocabulary, idf):
-    corpus = CountVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).fit_transform([request[0]['title'] + request[0]['detail']])
+    tokenized = CountVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).fit_transform([request[0]['title'] + request[0]['detail']])
     if idf:
-        request[0]['detail'] = TfidfTransformer().fit([doc['detail'] for doc in matrix]).transform(corpus).toarray()[0]
+        transformer = TfidfTransformer()
+        transformed = transformer.fit_transform([doc['detail'] for doc in matrix]).toarray()
+        for i, doc in enumerate(matrix):
+            doc['detail'] = transformed[i]
+        request[0]['detail'] = transformer.transform(tokenized).toarray()[0]
     else:
-        request[0]['detail'] = corpus.toarray()
+        request[0]['detail'] = tokenized.toarray()[0]
 
 
 def transform_post(request, matrix):
@@ -185,8 +191,8 @@ def threshold_calculate(pairs, parameter):
     for i in range(len(duplicate_range_count) - 1):
         difference = duplicate_range_count[i] - duplicate_range_count[i + 1]
         if previous_difference > difference:
-            parameter['medium_threshold'] = (parameter['data_range'] - i - 0.5) / parameter['data_range']
+            parameter['medium_threshold'] = min((parameter['data_range'] - i - 0.5) / parameter['data_range'], parameter['strong_threshold'])
             break
         previous_difference = difference
-    parameter['weak_threshold'] = numpy.percentile(duplicate_pairs, parameter['tail_percentile'])
+    parameter['weak_threshold'] = min(numpy.percentile(duplicate_pairs, parameter['tail_percentile']), parameter['medium_threshold'])
     Write.save_to_file(parameter, 'parameter.json')
