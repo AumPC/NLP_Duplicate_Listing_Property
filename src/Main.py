@@ -26,10 +26,10 @@ def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
     print('...')
 
 
-def clone(debug=DEBUG):
+def clone(debug=DEBUG, is_command=False):
     if debug:
         print("-- Query --")
-    query_command = ["SELECT * FROM ", " WHERE parent_id IS NULL ORDER BY condo_project_id DESC"]
+    query_command = ["SELECT * FROM ", " WHERE parent_id IS NULL and condo_project_id = 141 ORDER BY condo_project_id DESC"]
     rows = Query.query(query_command, False, debug)
     if not rows:
         return 'ERROR: Renthub database give nothing', 404
@@ -41,7 +41,10 @@ def clone(debug=DEBUG):
     projects = Ext.group_by_project(filter_rows)
     Sim.tokenize_all(projects, False, debug)
     Query.write_database('projects', projects, debug)
-    return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
+    if not is_command:
+        return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
+    else :
+        return {'multiple': multiple_rows, 'mismatch': mismatch_rows}
 
 
 def update(update_id):
@@ -129,11 +132,11 @@ def check_post(request):
     return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
 
-def check_all(debug=DEBUG):
+def check_all(debug=DEBUG, is_command=False):
     if debug:
         print("-- Query --")
     parameter = Query.read_json_file("parameter.json")
-    query_command = ["SELECT * FROM ", " WHERE parent_id IS NULL ORDER BY condo_project_id DESC"]
+    query_command = ["SELECT * FROM ", " WHERE parent_id IS NULL and condo_project_id = 141 ORDER BY condo_project_id DESC"]
     rows = Query.query(query_command, False, debug)
     if not rows:
         return 'ERROR: Renthub database give nothing', 404
@@ -149,8 +152,10 @@ def check_all(debug=DEBUG):
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_all(projects, parameter)
     if debug:
         print_group(strong_duplicate, medium_duplicate, weak_duplicate)
-    return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows})
-
+    if not is_command:
+        return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows})
+    else :
+        return {'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows}
 
 def get_parameter():
     return jsonify(Query.read_json_file("parameter.json"))
