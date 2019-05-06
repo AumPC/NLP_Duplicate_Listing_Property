@@ -234,7 +234,6 @@ def extraction_floor_before(floor, ext_floor):
             if ext_floor is None:
                 ext_floor = value
             if ext_floor != value:
-                print(ext_floor, value)
                 return -1
     return ext_floor
 
@@ -246,16 +245,10 @@ def extraction_floor(detail):
     if length == 1:
         floor = detail.split('ชั้น')
         ext_floor = extraction_floor_before(floor, ext_floor)
-        if ext_floor == -1:
-            print(detail)
-            print("-----------------------------------------------")
     else:
         for f in all_floor[1:length-1]:
             floor = f.split('ชั้น')
             ext_floor = extraction_floor_before(floor, ext_floor)
-            if ext_floor == -1:
-                print(detail)
-                print("-----------------------------------------------")
     return ext_floor
 
 

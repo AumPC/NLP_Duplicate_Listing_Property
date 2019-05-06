@@ -6,6 +6,21 @@ An NLP project: Detect duplication of property in condo listings
 - Similarity Data
 - Scoring
 
+
+**Contents** :
+- [Installation](#installation)
+- [Run Module](#run-module)
+- [API](#api)
+  - [/clone](#clone)
+  - [/update/\<row_id>](#updaterow_id)
+  - [/check/\<row_id>](#checkrow_id)
+  - [/check/request](#checkrequest)
+  - [/check/all](#checkall)
+  - [/parameter](#parameter)
+  - [/parameter/reset](#parameterreset)
+- [Parameter and Scoring](#parameter-and-scoring)
+- [Parameter and Threshold](#parameter-and-threshold)
+
 # Installation
 `pip install -r requirements.txt`
 
@@ -19,7 +34,8 @@ Will be running on http://127.0.0.1:5000/
 
 # API
 Almost api use **POST** method.
-## /clone
+
+### /clone
 Clone database with preprocessing data.
 Return multiple rows and mismatch rows in JSON format.
 
@@ -29,11 +45,11 @@ This also can be used by command line. Response will be printed when finish.
 
 ```python clone.py```
 
-## /update/\<row_id>
+### /update/\<row_id>
 Upsert a row into database with preprocessing data.
 Return multiple rows and mismatch rows (if found) in JSON format.
 
-## /check/\<row_id>
+### /check/\<row_id>
 Calculate duplicate score with all rows in same project,
 and split to 3 groups by threshold.
 If requested row's project is null,
@@ -42,7 +58,7 @@ Return scores, multiple rows and mismatch rows (if found) in JSON format.
 
 **Must update requested row into database first**
 
-## /check/request
+### /check/request
 Work like previous api but receive JSON body format instead of row's id.
 This api also preprocess requested data automatically.
 Requested body format must follow the example.
@@ -66,7 +82,7 @@ Return scores, multiple rows and mismatch rows (if found) in JSON format.
 }
 ```
 
-## /check/all
+### /check/all
 Original feature, query **Main** database's all row, preprocess, calculate score and group results.
 Unlike previous two, strong and medium duplicate document will be summed into groups by consider maximum (pair) score.
 Return group of strong, medium group of duplicate, weak pair, multiple rows and mismatch rows in JSON format.
@@ -77,14 +93,14 @@ This also can be used by command line. Response will be printed when finish.
 
 ```python check_all.py```
 
-## /parameter
+### /parameter
 This api can receive **GET** method, return parameter.json's value.
 
 Set new value in requested body to parameter.json.
 Requested body can be JSON which consist of want-to-set key-value.
 Return 'success' if success.
 
-## /parameter/reset
+### /parameter/reset
 Reset parameter.json to default value.
 **Default value may not fit to data well**
 
