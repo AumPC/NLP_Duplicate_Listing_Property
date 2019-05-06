@@ -200,6 +200,13 @@ def extraction_bed_bath(detail):
     bathroom = bathroom.pop() if len(bathroom) > 0 else None
     return bedroom, bathroom
 
+def check_leftover(text):
+    cut_text = ['ห้องนอน', 'ตร', 'ตาราง']
+    for cut in cut_text:
+        leftover = text.split(cut)
+        if len(leftover) > 1 and leftover[0] == '':
+            return True
+    return False            
 
 def extraction_floor_before(floor, ext_floor):
     if ext_floor == -1:
@@ -212,12 +219,22 @@ def extraction_floor_before(floor, ext_floor):
             point += 1
             if point >= len(floor[i+1]):
                 break
-        ext_floor_arr = floor[i+1][0:point].upper()
-        ext_floor_arr = re.split('[ /,]', ext_floor_arr)
+        ext_floor_arr = [ floor for floor in re.split('[ /,]', floor[i+1][0:point].upper()) if floor ]
+        if ext_floor_arr and check_leftover(floor[i+1][point:]):
+            ext_floor_arr.pop()
         for value in ext_floor_arr:
-            if value and ext_floor is None:
+            try:
+                if int(value) > 40:
+                    continue
+            except :
+                if value == '12A':
+                    pass
+                else:
+                    continue
+            if ext_floor is None:
                 ext_floor = value
-            if value and ext_floor != value:
+            if ext_floor != value:
+                print(ext_floor, value)
                 return -1
     return ext_floor
 
@@ -229,10 +246,16 @@ def extraction_floor(detail):
     if length == 1:
         floor = detail.split('ชั้น')
         ext_floor = extraction_floor_before(floor, ext_floor)
+        if ext_floor == -1:
+            print(detail)
+            print("-----------------------------------------------")
     else:
         for f in all_floor[1:length-1]:
             floor = f.split('ชั้น')
             ext_floor = extraction_floor_before(floor, ext_floor)
+            if ext_floor == -1:
+                print(detail)
+                print("-----------------------------------------------")
     return ext_floor
 
 
