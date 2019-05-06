@@ -5,9 +5,6 @@ import re
 from string import ascii_letters, punctuation, digits, whitespace
 
 
-GLOBAL_TABLE = "condo_listings_sample"
-
-
 def query(query_command, is_local, debug):
     if is_local:
         param_db = read_json_file('parameter_nlp_db.json')
@@ -23,8 +20,7 @@ def query(query_command, is_local, debug):
     conn = psycopg2.connect(dbname=param_db['db_name'], user=param_db['username'], password=param_db['password'],
                             host=param_db['host'], port=param_db['port'])
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    # cur.execute(f"{query_command[0]}{param_db['table']}{query_command[1]}")
-    cur.execute(f"{query_command[0]}{GLOBAL_TABLE}{query_command[1]}")
+    cur.execute(f"{query_command[0]}{param_db['table']}{query_command[1]}")
     rows = cur.fetchall()
     if debug:
         print("The number of data: ", cur.rowcount)
@@ -58,12 +54,13 @@ def read_json_file(filename):
     data = json.load(open_file)
     return data
 
+
 def clean_replace_text(text, cut_name, replace_arr):
     for i in cut_name:
         text = text.split(i)[-1]
     text = re.sub(' ', '', text)
     start = 0
-    thai_vowels = ['ฤ', 'ฦ', 'ะ', 'ั', 'า', 'ำ', 'ิ', 'ี', 'ึ', 'ื', 'ุ', 'ู',  '็', '่', 'ฺ',  '์', ',']
+    thai_vowels = ['ฤ', 'ฦ', 'ะ', 'ั', 'า', 'ำ', 'ิ', 'ี', 'ึ', 'ื', 'ุ', 'ู', '็', '่', 'ฺ', '์', ',']
     while start < len(text) and text[start] in thai_vowels:
         start += 1
     text = text[start:].upper()
@@ -95,7 +92,7 @@ def process_floor(floor):
         return floor
     floor_name = ['ชั้น', 'floor']
     thai_building = {'เอ': 'A', 'บี': 'B', 'ซี': 'C', 'ดี': 'D', 'อี': 'E', 'เอฟ': 'F', 'จี': 'G'}
-    floor = clean_replace_text(floor, floor_name, thai_building)    
+    floor = clean_replace_text(floor, floor_name, thai_building)
     return floor
 
 
@@ -112,7 +109,7 @@ def clear_tag(detail):
     detail = re.sub(r'<.*?>|&nbsp;|&gt;|&lt;|==|\*\*', ' ', detail)
     detail = re.sub('\t|=[=]+|:[:]+|/[/]+|\\[\\]+|-[-]+', '', detail)
     detail = re.sub('[ ]+', ' ', detail)
-    detail = '\r\n'.join([re.sub('^[-*#= ]+|[*]$', '',text) for text in detail.split('\r\n')])
+    detail = '\r\n'.join([re.sub('^[-*#= ]+|[*]$', '', text) for text in detail.split('\r\n')])
     return detail
 
 
@@ -158,12 +155,16 @@ def create_table(table_name, conn, cur, debug):
 
 
 def write_database(table_name, data, debug):
-    check_command = f"SELECT EXISTS ( SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' and table_name = '{ table_name }');"
+    check_command = f"SELECT EXISTS ( SELECT 1 FROM information_schema.tables WHERE table_schema =" \
+        f" 'public' and table_name = '{table_name}');"
     command = {
         'projects': """  
-                INSERT INTO public.projects (id, project, title, price, size, tower, floor, bedroom, bathroom, detail, ext)
-                VALUES (%(id)s, %(project)s, %(title)s, %(price)s, %(size)s, %(tower)s, %(floor)s, %(bedroom)s, %(bathroom)s, %(detail)s, %(ext)s)
-                ON CONFLICT (id) DO UPDATE SET (project, title, price, size, tower, floor, bedroom, bathroom, detail, ext) = 
+                INSERT INTO public.projects (id, project, title, price, size, tower, floor,
+                 bedroom, bathroom, detail, ext)
+                VALUES (%(id)s, %(project)s, %(title)s, %(price)s, %(size)s, %(tower)s, %(floor)s,
+                 %(bedroom)s, %(bathroom)s, %(detail)s, %(ext)s)
+                ON CONFLICT (id) DO UPDATE SET (project, title, price, size, tower, floor,
+                 bedroom, bathroom, detail, ext) = 
                 (EXCLUDED.project, EXCLUDED.title, EXCLUDED.price, EXCLUDED.size, EXCLUDED.tower, 
                 EXCLUDED.floor, EXCLUDED.bedroom, EXCLUDED.bathroom, EXCLUDED.detail, EXCLUDED.ext);
         """,
@@ -176,7 +177,8 @@ def write_database(table_name, data, debug):
     param_db = read_json_file('parameter_nlp_db.json')
     if debug:
         print("Writing :", table_name)
-    conn = psycopg2.connect(f"dbname={param_db['db_name']} user= {param_db['username']} password= {param_db['password']}")
+    conn = psycopg2.connect(
+        f"dbname={param_db['db_name']} user= {param_db['username']} password= {param_db['password']}")
     cur = conn.cursor()
     cur.execute(check_command)
     if not cur.fetchall()[0][0]:

@@ -4,5 +4,5 @@
   "password": "example",
   "host": "localhost",
   "port": 5432,
-  "table": "example"
+  "table": "example.example"
 }

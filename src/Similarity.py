@@ -31,7 +31,8 @@ def different_character(a, b):
 
 def field_similarity(a, b, weight):
     try:
-        price_score = weight['price'] * (different_numerical(a['price'][0], b['price'][0]) + different_numerical(a['price'][1], b['price'][1])) / 2
+        price_score = weight['price'] * (different_numerical(a['price'][0], b['price'][0]) +
+                                         different_numerical(a['price'][1], b['price'][1])) / 2
     except TypeError:
         price_score = weight['price'] * int(a['price'] is b['price'])
     size_score = weight['size'] * different_numerical(a['size'], b['size'])
@@ -80,7 +81,8 @@ def similarity_post(request, matrix, parameter):
     strong_duplicate = []
     medium_duplicate = []
     weak_duplicate = []
-    scores = [(doc['id'], score_calculate(request, doc, parameter['weight'], parameter['half_weight_frequency'])) for doc in matrix if doc['id'] != request['id']]
+    scores = [(doc['id'], score_calculate(request, doc, parameter['weight'], parameter['half_weight_frequency']))
+              for doc in matrix if doc['id'] != request['id']]
     for doc, score in scores:
         if score >= parameter['strong_threshold']:
             strong_duplicate.append((doc, score))
@@ -101,7 +103,9 @@ def similarity_all(projects, parameter):
     most_confidences = {}
     threshold_check = []
     for project_id, project in projects.items():
-        calculated_docs = [(a['id'], b['id'], a['threshold_check'], b['threshold_check'], score_calculate(a, b, parameter['weight'], parameter['half_weight_frequency'])) for a, b in combinations(project, 2)]
+        calculated_docs = [(a['id'], b['id'], a['threshold_check'], b['threshold_check'],
+                            score_calculate(a, b, parameter['weight'], parameter['half_weight_frequency']))
+                           for a, b in combinations(project, 2)]
         most_confidences[project_id] = {i['id']: (i['id'], 0) for i in project}
         for a, b, threshold_check_a, threshold_check_b, score in calculated_docs:
             if most_confidences[project_id][a][1] < score:
@@ -143,17 +147,20 @@ def tokenize_all(projects, idf, debug):
         else:
             matrix = tokenized.toarray()
         for i, doc in enumerate(project):
-            doc['threshold_check'] = doc['title'] + doc['detail'][:100] if len(doc['detail']) > 100 else doc['title'] + doc['detail']
+            doc['threshold_check'] = doc['title'] + doc['detail'][:100]\
+                if len(doc['detail']) > 100 else doc['title'] + doc['detail']
             doc['detail'] = matrix[i]
         if project[0]['project'] is not None:
-            corpus.append({'id': project[0]['project'], 'project': project[0]['project'], 'corpus': vectorizer.get_feature_names()})
+            corpus.append({'id': project[0]['project'], 'project': project[0]['project'],
+                           'corpus': vectorizer.get_feature_names()})
         else:
             corpus.append({'id': 0, 'project': None, 'corpus': vectorizer.get_feature_names()})
     Query.write_database('corpus', corpus, debug)
 
 
 def tokenize_post(request, matrix, vocabulary, idf):
-    tokenized = CountVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).fit_transform([request[0]['title'] + request[0]['detail']])
+    tokenized = CountVectorizer(tokenizer=word_tokenize, vocabulary=vocabulary).\
+        fit_transform([request[0]['title'] + request[0]['detail']])
     if idf:
         transformer = TfidfTransformer()
         transformed = transformer.fit_transform([doc['detail'] for doc in matrix]).toarray()
@@ -191,8 +198,10 @@ def threshold_calculate(pairs, parameter):
     for i in range(len(duplicate_range_count) - 1):
         difference = duplicate_range_count[i] - duplicate_range_count[i + 1]
         if previous_difference > difference:
-            parameter['medium_threshold'] = min((parameter['data_range'] - i - 0.5) / parameter['data_range'], parameter['strong_threshold'])
+            parameter['medium_threshold'] = min((parameter['data_range'] - i - 0.5) / parameter['data_range'],
+                                                parameter['strong_threshold'])
             break
         previous_difference = difference
-    parameter['weak_threshold'] = min(numpy.percentile(duplicate_pairs, parameter['tail_percentile']), parameter['medium_threshold'])
+    parameter['weak_threshold'] = min(numpy.percentile(duplicate_pairs, parameter['tail_percentile']),
+                                      parameter['medium_threshold'])
     Write.save_to_file(parameter, 'parameter.json')

@@ -4,8 +4,7 @@ import src.ExtractionFilter as Ext
 import src.Similarity as Sim
 import src.WriteFile as Write
 
-
-DEBUG = True
+DEBUG = False
 
 
 def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
@@ -29,7 +28,7 @@ def print_group(strong_duplicate, medium_duplicate, weak_duplicate):
 def clone(debug=DEBUG, is_command=False):
     if debug:
         print("-- Query --")
-    query_command = ["SELECT * FROM ", " WHERE parent_id IS NULL and condo_project_id = 141 ORDER BY condo_project_id DESC"]
+    query_command = ["SELECT * FROM ", " WHERE parent_id IS NULL ORDER BY condo_project_id DESC"]
     rows = Query.query(query_command, False, debug)
     if not rows:
         return 'ERROR: Renthub database give nothing', 404
@@ -43,7 +42,7 @@ def clone(debug=DEBUG, is_command=False):
     Query.write_database('projects', projects, debug)
     if not is_command:
         return jsonify({'multiple': multiple_rows, 'mismatch': mismatch_rows})
-    else :
+    else:
         return {'multiple': multiple_rows, 'mismatch': mismatch_rows}
 
 
@@ -129,14 +128,16 @@ def check_post(request):
     strong_duplicate, medium_duplicate, weak_duplicate = Sim.similarity_post(filter_request[0], matrix, parameter)
     if DEBUG:
         print_group(strong_duplicate, medium_duplicate, weak_duplicate)
-    return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows})
+    return jsonify(
+        {'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate,
+         'multiple': multiple_rows, 'mismatch': mismatch_rows})
 
 
 def check_all(debug=DEBUG, is_command=False):
     if debug:
         print("-- Query --")
     parameter = Query.read_json_file("parameter.json")
-    query_command = ["SELECT * FROM ", " WHERE parent_id IS NULL and condo_project_id = 141 ORDER BY condo_project_id DESC"]
+    query_command = ["SELECT * FROM ", " WHERE parent_id IS NULL ORDER BY condo_project_id DESC"]
     rows = Query.query(query_command, False, debug)
     if not rows:
         return 'ERROR: Renthub database give nothing', 404
@@ -153,9 +154,12 @@ def check_all(debug=DEBUG, is_command=False):
     if debug:
         print_group(strong_duplicate, medium_duplicate, weak_duplicate)
     if not is_command:
-        return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows})
-    else :
-        return {'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate, 'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows}
+        return jsonify({'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate,
+                        'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows})
+    else:
+        return {'strong_duplicate': strong_duplicate, 'medium_duplicate': medium_duplicate,
+                'weak_duplicate': weak_duplicate, 'multiple': multiple_rows, 'mismatch': mismatch_rows}
+
 
 def get_parameter():
     return jsonify(Query.read_json_file("parameter.json"))
@@ -207,18 +211,7 @@ def set_parameter(data):
 
 def reset_parameter():
     parameter = {'auto_threshold': True, 'data_range': 20, 'half_weight_frequency': 9, 'medium_threshold': 1.0,
-                 'tail_percentile': 1, 'strong_threshold': 1.0, 'weak_threshold': 1.0, 'weight': {
-                    "bathroom": 0.1,
-                    "bedroom": 0.1,
-                    "floor": 0.2,
-                    "price": 0.35,
-                    "size": 0.1,
-                    "tower": 0.15
-                 }}
+                 'tail_percentile': 1, 'strong_threshold': 1.0, 'weak_threshold': 1.0,
+                 'weight': {"bathroom": 0.1, "bedroom": 0.1, "floor": 0.2, "price": 0.35, "size": 0.1, "tower": 0.15}}
     Write.save_to_file(parameter, 'parameter.json')
     return jsonify(parameter)
-
-
-if __name__ == "__main__":
-    test_post = '1234'
-    result, result_2, result_3 = check_post(test_post)

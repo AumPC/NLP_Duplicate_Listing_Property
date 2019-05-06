@@ -43,13 +43,13 @@ def check_by_req():
             if not isinstance(data[field], str):
                 try:
                     data[field] = str(data[field])
-                except:
+                except ValueError:
                     return f'ERROR: invalid {field} type: expect string', 401
         elif field == 'size':
             if not (isinstance(data[field], float) or isinstance(data[field], int)):
                 try:
                     data[field] = float(data[field])
-                except:
+                except ValueError:
                     return f'ERROR: invalid {field} type: expect int or float', 401
                 if data[field] < 0:
                     return f'ERROR: invalid {field} range', 401
@@ -61,7 +61,7 @@ def check_by_req():
                     if not (isinstance(data[field][index], float) or isinstance(data[field][index], int)):
                         try:
                             data[field][index] = float(data[field][index])
-                        except:
+                        except ValueError:
                             return f"ERROR: invalid {field}'s element type: expect int or float", 401
                 if not 0 <= data[field][0] <= data[field][1]:
                     return f'ERROR: invalid {field} range', 401
