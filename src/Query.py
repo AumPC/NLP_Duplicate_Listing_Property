@@ -40,8 +40,8 @@ def query(query_command, is_local, debug):
         condo['tower'] = process_tower(row['room_information']['building'])
 
         condo['floor'] = process_floor(row['room_information']['on_floor'])
-        condo['bedroom'] = row['room_information']['no_of_bed']
-        condo['bathroom'] = row['room_information']['no_of_bath']
+        condo['bedroom'] = process_bed_bath(row['room_information']['no_of_bed'])
+        condo['bathroom'] = process_bed_bath(row['room_information']['no_of_bath'])
         condo['detail'] = process_detail(row['detail'])
         listing.append(condo)
     return listing
@@ -64,6 +64,15 @@ def clean_replace_text(text, cut_name, replace_arr):
     for i in replace_arr.keys():
         text = re.sub(i, replace_arr[i], text)
     return text
+
+
+def process_bed_bath(bed_bath):
+    if bed_bath is None or bed_bath == '' or bed_bath == '-':
+        return bed_bath
+    bed_bath_name = ['ห้องนอน', 'นอน', 'bed', 'bedroom', 'ห้องน้ำ', 'น้ำ', 'bath', 'bathroom']
+    bed_bath_replace = {'STUDIO': '1', 'STUDIOS': '1'}
+    bed_bath = clean_replace_text(bed_bath, bed_bath_name, bed_bath_replace)
+    return bed_bath
 
 
 def process_tower(tower):
@@ -97,10 +106,7 @@ def clear_tag(detail):
     detail = re.sub(r'<.*?>|&nbsp;|&gt;|&lt;|==|\*\*', ' ', detail)
     detail = re.sub('\t|=[=]+|:[:]+|/[/]+|\\[\\]+|-[-]+', '', detail)
     detail = re.sub('[ ]+', ' ', detail)
-    detail = detail.split('\r\n')
-    for index in range(len(detail)):
-        detail[index] = re.sub('^[-*#= ]+|[*]$', '', detail[index])
-    detail = '\r\n'.join(detail)
+    detail = '\r\n'.join([re.sub('^[-*#= ]+|[*]$', '',text) for text in detail.split('\r\n')])
     return detail
 
 

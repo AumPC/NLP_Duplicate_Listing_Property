@@ -51,11 +51,18 @@ def extraction_size_before(detail, keyword):
     for key in keyword:
         for size in detail.split(key)[:-1]:
             point = len(size)-1
-            while size[point] in '0123456789 /,.':
+            while size[point] in '0123456789 /,.-':
                 point -= 1
                 if point < 0:
                     break
-            ext_size_arr.append(size[point+1:])
+            found = size[point+1:]
+            have_floor = size.split('ชั้น')
+            if len(have_floor) > 1 and have_floor[-1] == found:
+                found = [value for value in re.split('[ /,]', found) if value]
+                if len(found) > 1:
+                    found = found[1:]
+                found = ' '.join(found)                
+            ext_size_arr.append(found)
     return ext_size_arr
 
 
@@ -66,7 +73,7 @@ def extraction_size_after(detail, keyword):
             point = 0
             if size == '':
                 continue
-            while size[point] in '0123456789 /,.':
+            while size[point] in '0123456789 /,.-':
                 point += 1
                 if point >= len(size):
                     break
@@ -76,8 +83,7 @@ def extraction_size_after(detail, keyword):
 
 def extraction_size(detail):
     prefix_keyword = [
-        'ตรม', 'ตร.ม', 'ตร ม', 'ตร. ม',
-        'ตารางเมตร', 'ตารางวา', 'ตาราง.ม.',
+        'ตรม', 'ตร.ม', 'ตร ม', 'ตร. ม', 'ตารางเมตร', 'ตารางวา', 'ตาราง.ม.',
         'Square meters', 'Square meters',
         'SQ.M', 'SQ.m', 'Sq.M', 'Sq.m', 'sQ.M', 'sQ.m', 'sq.M', 'sq.m',
         'SQM ', 'SQm ', 'SqM ', 'Sqm ', 'sQM ', 'sQm ', 'sqM ', 'sqm ',
@@ -85,11 +91,23 @@ def extraction_size(detail):
         'sqm,'
     ]
     postfix_keyword = [
-        # 'ขนาด',
-        # 'พื้นที่',
+        # 'ขนาด', 'พื้นที่',
         'sq.m.):']
-    ext_size = extraction_size_before(detail, prefix_keyword) + extraction_size_after(detail, postfix_keyword)
-    ext_size = [float(value) for size in ext_size for value in re.split('[ /,]', size) if value and value[0] != '.' and value[-1] != '.']
+    ext_size_arr = extraction_size_before(detail, prefix_keyword) + extraction_size_after(detail, postfix_keyword)
+    ext_size = []
+    for size in ext_size_arr:
+        temp_arr = []
+        split_value = re.split('[ /,-]', size)
+        for value in split_value:
+            if not value or value[0] == '.' or value[-1] == '.':
+                continue
+            if (len(value) == 3 and value[0] in '0123456789' and value[1] in '0' and value[2] in '0') or (float(value) < 10):
+                if temp_arr:
+                    temp_arr.pop()
+                continue
+            if 19 < float(value) < 1000:
+                temp_arr.append(float(value))
+        ext_size += temp_arr
     ext_size = list(set(ext_size))
     if len(ext_size) > 1:
         return -1
@@ -99,28 +117,39 @@ def extraction_size(detail):
 
 
 def extraction_tower(detail):
-    # thai_building = ['เอ', 'บี', 'ซี', 'ดี', 'อี', 'เอฟ', 'จี']
     thai_building = {'เอ': 'A', 'บี': 'B', 'ซี': 'C', 'ดี': 'D', 'อี': 'E', 'เอฟ': 'F', 'จี': 'G'}
     number_building = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-    name_building = set(list(thai_building.keys()) + number_building + list(string.ascii_letters))
+    combined_building = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 
+                        'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 
+                        'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 
+                        'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 
+                        'E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', 'E9', 
+                        'CENTER', 'WEST', 'EAST']
+    name_building = set(list(thai_building.keys()) + number_building + list(string.ascii_letters) + combined_building)
     keyword = ['ตึก', 'อาคาร']
     ext_tower_arr = []
     for key in keyword:
-        tower = detail.split(key)
-        for i in range(len(tower) - 1):
+        for tower in detail.split(key)[1:]:
             point = 0
-            if tower[i + 1] == '':
+            if tower == '':
                 continue
             found = 0
-            while point < len(tower[i + 1]) and (tower[i + 1][point] not in ' \r\n' or found != 2):
-                if tower[i + 1][point] in '0123456789' and found <= 1:
+            while point < len(tower) and (tower[point] not in ' \r\n(' or found != 2):
+                if tower[point] in '0123456789' and found <= 1:
                     found = 1
-                elif tower[i + 1][point] not in '\r\n ':
+                elif tower[point] not in '\r\n ':
                     found = 2
                 point += 1
-            ext_tower = tower[i + 1][0:point]
-            if 'ตึก' in ext_tower or 'อาคาร' in ext_tower or 'คัน' in ext_tower or 'ชั้น' in ext_tower:
+            ext_tower = tower[0:point]
+            if 'ตึก' in ext_tower or 'อาคาร' in ext_tower or 'คัน' in ext_tower or 'ตัว' in ext_tower or 'ทาวเวอร์' in ext_tower:
                 continue
+            if 'ชั้น' in ext_tower:
+                is_floor = tower.split('ชั้น')[1]
+                point = 0
+                while point < len(is_floor) and is_floor[point] not in ' ':
+                    point += 1
+                if point == len(is_floor) or is_floor[point] not in '0123456789':
+                    continue
             ext_tower_arr += re.split('[ /,]', ext_tower)
     ext_tower_arr = list(set(ext_tower for ext_tower in ext_tower_arr if ext_tower in name_building))
     for i in range(len(ext_tower_arr)):
@@ -128,6 +157,7 @@ def extraction_tower(detail):
             ext_tower_arr[i] = thai_building[ext_tower_arr[i]]
         else:
             ext_tower_arr[i] = ext_tower_arr[i].upper()
+    ext_tower_arr = list(set(ext_tower_arr))
     if len(ext_tower_arr) > 1:
         return -1
     if not ext_tower_arr:
@@ -158,9 +188,9 @@ def extraction_bed_bath(detail):
             exp = re.compile(p)
             for i in exp.findall(detail):
                 bed = [j for j in re.split(' ', re.sub(',', '', i[0])) if j != '']
-                bed = [bed[-1]] if len(bed) > 0 else None
+                bed = [bed[0]] if len(bed) > 0 else None
                 bath = [j for j in re.split(' ', re.sub(',', '', i[1])) if j != '']
-                bath = [bath[-1]] if len(bath) > 0 else None
+                bath = [bath[0]] if len(bath) > 0 else None
                 if bed is not None and bath is not None:
                     bedroom.update(bed)
                     bathroom.update(bath)
@@ -243,34 +273,41 @@ def extraction(rows, debug):
             not_found['bathroom'] += 1
         if ext['floor'] is None:
             not_found['floor'] += 1
-        if ext['price'] is not None and row['price'] is not None:
-            if (row['price'][0] == row['price'][1] and (ext['price'][0] != row['price'][0] and ext['price'][1] != row['price'][0])) or \
+        if ext['price'] is not None:
+            if row['price'] is None:
+                row['price'] = ext['price']
+            elif (row['price'][0] == row['price'][1] and (ext['price'][0] != row['price'][0] and ext['price'][1] != row['price'][0])) or \
             (row['price'][0] != row['price'][1] and ext['price'] != row['price']):
                 not_match_row.append(row['id'])
                 continue
-        if ext['size'] is not None and row['size'] is not None and ext['size'] != row['size']:
-            not_match_row.append(row['id'])
-            continue
-        if ext['tower'] is not None and row['tower'] is not None and ext['tower'] != row['tower']:
-            if row['tower'] == '':
+        if ext['size'] is not None and ext['size'] != row['size']:
+            if row['size'] == '' or row['size'] is None:
+                row['size'] = ext['size']
+            else:            
+                not_match_row.append(row['id'])
+                continue
+        if ext['tower'] is not None and ext['tower'] != row['tower']:
+            if row['tower'] == '' or row['tower'] is None:
                 row['tower'] = ext['tower']
             else:
                 not_match_row.append(row['id'])
                 continue
-        if ext['bedroom'] is not None and row['bedroom'] is not None and ext['bedroom'] != row['bedroom']:
-            if row['bedroom'] == '':
+        if ext['bedroom'] is not None and ext['bedroom'] != row['bedroom']:
+            if row['bedroom'] == '' or row['bedroom'] is None:
                 row['bedroom'] = ext['bedroom']
             else:
                 not_match_row.append(row['id'])
                 continue
-        if ext['bathroom'] is not None and row['bathroom'] is not None and ext['bathroom'] != row['bathroom']:
-            if row['bathroom'] == '':
+        if ext['bathroom'] is not None and ext['bathroom'] != row['bathroom']:
+            if row['bathroom'] == '' or row['bathroom'] is None:
                 row['bathroom'] = ext['bathroom']
             else:
                 not_match_row.append(row['id'])
                 continue
         if ext['floor'] is not None and ext['floor'] != row['floor']:
-            if ext['floor'] == -1:
+            if row['floor'] == '' or row['floor'] is None:
+                row['floor'] = ext['floor']
+            elif ext['floor'] == -1:
                 check_floor_row.append(row['id'])
                 ext['floor'] = None
                 not_found['floor'] += 1
